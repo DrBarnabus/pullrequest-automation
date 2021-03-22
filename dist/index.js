@@ -44,10 +44,11 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('repo-token', { required: true });
-            const configurationPath = core.getInput('configuration-path', { required: true });
             const client = github_1.getOctokit(token);
+            const configurationPath = core.getInput('configuration-path', { required: true });
             const configuration = yield getConfiguration(client, configurationPath);
-            const prNumber = getCurrentPrNumber();
+            core.info(`Triggered by: ${github_1.context.eventName}`);
+            const prNumber = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
             if (!prNumber) {
                 core.error('Could not determine current pull request number from context, exiting...');
                 return;
@@ -57,29 +58,155 @@ function run() {
                 repo: github_1.context.repo.repo,
                 pull_number: prNumber
             });
-            core.info(`Evaluating PR #${pullRequest.number} - '${pullRequest.title}'`);
-            core.info(`PR Target is: ${pullRequest.base.ref}`);
+            const baseRef = pullRequest.base.ref;
+            core.info(`Evaluating: PR #${pullRequest.number} - '${pullRequest.title}' with BaseRef of ${baseRef}`);
+            const { data: currentLabels } = yield client.issues.listLabelsOnIssue({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: prNumber
+            });
+            let branchLabelToApply = null;
+            for (let { target, startsWith, label } of configuration.branchLabeller) {
+                if ((baseRef == target && !startsWith) || (baseRef.startsWith(target) && startsWith)) {
+                    branchLabelToApply = label;
+                    break;
+                }
+            }
+            if (branchLabelToApply != null) {
+                if (currentLabels.some(l => l.name == branchLabelToApply)) {
+                    core.info(`Branch Label of ${branchLabelToApply} is already applied.`);
+                }
+                else {
+                    core.info(`Adding Branch Label of ${branchLabelToApply} based on base commit ref.`);
+                    yield client.issues.addLabels({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: prNumber,
+                        labels: [
+                            branchLabelToApply
+                        ]
+                    }).catch(_ => { });
+                    core.info(`Removing Branch Labels that no longer apply.`);
+                    let labelRemoved = false;
+                    for (let { label } of configuration.branchLabeller) {
+                        if (label == branchLabelToApply)
+                            continue;
+                        if (currentLabels.some(l => l.name == label)) {
+                            yield client.issues.removeLabel({
+                                owner: github_1.context.repo.owner,
+                                repo: github_1.context.repo.repo,
+                                issue_number: prNumber,
+                                name: label
+                            }).catch(_ => { });
+                            labelRemoved = true;
+                        }
+                    }
+                    if (labelRemoved) {
+                        core.warning('An older branch label for a different branch was found and removed, commenting warning.');
+                        yield client.issues.createComment({
+                            owner: github_1.context.repo.owner,
+                            repo: github_1.context.repo.repo,
+                            issue_number: prNumber,
+                            body: '⚠️ WARNING: It looks like the base ref of the Pull Request has changed. ⚠️\nIf this was intentional then there isn\'t anything to worry about.'
+                        }).catch(_ => { });
+                    }
+                }
+            }
             const { data: pullRequstReviews } = yield client.pulls.listReviews({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 pull_number: prNumber
             });
-            let totalApproved = 0;
-            let isRejected = false;
+            let reviewStateMap = new Map();
             for (const pullRequestReview of pullRequstReviews) {
-                if (pullRequestReview.state === "APPROVED") {
-                    totalApproved += 1;
-                    core.info(`Review from User ${(_a = pullRequestReview.user) === null || _a === void 0 ? void 0 : _a.login} was APPROVED adding one to total.`);
+                if (pullRequestReview.user == null) {
+                    core.warning(`Review ${pullRequestReview.id} had a user of undefined.`);
+                    continue;
                 }
-                else if (pullRequestReview.state === "REJECTED") {
-                    isRejected = true;
-                    core.warning(`Review from User ${(_b = pullRequestReview.user) === null || _b === void 0 ? void 0 : _b.login} was REJECTED rejecting PR.`);
+                if (pullRequestReview.commit_id !== pullRequest.head.sha) {
+                    core.debug(`Review from User ${(_b = pullRequestReview.user) === null || _b === void 0 ? void 0 : _b.login} was ignored as it was not for current CommitRef.`);
+                    continue;
+                }
+                if (pullRequestReview.state === 'APPROVED') {
+                    reviewStateMap.set(pullRequestReview.user.login, 'APPROVED');
+                    core.info(`Added APPROVED state from ${pullRequestReview.user.login} reviewed at ${pullRequestReview.submitted_at}`);
+                }
+                else if (pullRequestReview.state === 'CHANGES_REQUESTED') {
+                    reviewStateMap.set(pullRequestReview.user.login, 'CHANGES_REQUESTED');
+                    core.info(`Added CHANGES_REQUESTED state from ${pullRequestReview.user.login} reviewed at ${pullRequestReview.submitted_at}`);
                 }
                 else {
-                    core.info(`Review from User ${(_c = pullRequestReview.user) === null || _c === void 0 ? void 0 : _c.login} was not APPROVED/REJECTED ignoring.`);
+                    core.info(`Review from User ${(_c = pullRequestReview.user) === null || _c === void 0 ? void 0 : _c.login} reviewed at ${pullRequestReview.submitted_at} was not APPROVED/CHANGES_REQUESTED ignoring.`);
                 }
             }
-            core.info(`Total Approved: ${totalApproved}, Approvals Required: ${configuration.requiredApprovals}, Is Rejected: ${isRejected}`);
+            let totalApproved = 0;
+            let isRejected = false;
+            for (let [user, state] of reviewStateMap) {
+                core.info(`${user} ended with state of ${state}`);
+                if (state === 'CHANGES_REQUESTED') {
+                    isRejected = true;
+                    break;
+                }
+                if (state === 'APPROVED') {
+                    ++totalApproved;
+                }
+            }
+            let isApproved = totalApproved >= configuration.requiredApprovals;
+            core.info(`TotalApproved: ${totalApproved}, ApprovalsRequired: ${configuration.requiredApprovals}, IsApproved ${isApproved}, IsRejected: ${isRejected}`);
+            if (isRejected) {
+                yield client.issues.addLabels({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    labels: [
+                        configuration.labels.rejected
+                    ]
+                }).catch(_ => { });
+                yield client.issues.removeLabel({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    name: configuration.labels.approved
+                }).catch(_ => { });
+            }
+            else if (isApproved) {
+                yield client.issues.addLabels({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    labels: [
+                        configuration.labels.approved
+                    ]
+                }).catch(_ => { });
+                yield client.issues.removeLabel({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    name: configuration.labels.rejected
+                }).catch(_ => { });
+            }
+            else {
+                yield client.issues.removeLabel({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    name: configuration.labels.approved
+                }).catch(_ => { });
+                yield client.issues.removeLabel({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: prNumber,
+                    name: configuration.labels.rejected
+                }).catch(_ => { });
+                if (github_1.context.eventName === 'pull_request') {
+                    yield client.issues.createComment({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: prNumber,
+                        body: 'A change to this branch reset it\'s review status. 😢\nTo help with the review process, make sure to mention what you changed in a comment.'
+                    }).catch(_ => { });
+                }
+            }
         }
         catch (error) {
             core.error(error);
@@ -91,7 +218,7 @@ function getConfiguration(client, configurationPath) {
     return __awaiter(this, void 0, void 0, function* () {
         const configurationContent = yield fetchContent(client, configurationPath);
         const configObject = yaml.load(configurationContent);
-        return configObject.labels;
+        return configObject;
     });
 }
 function fetchContent(client, repoPath) {
@@ -105,13 +232,6 @@ function fetchContent(client, repoPath) {
         response.data;
         return Buffer.from(response.data.content, response.data.encoding).toString();
     });
-}
-function getCurrentPrNumber() {
-    const currentPullRequest = github_1.context.payload.pull_request;
-    if (!currentPullRequest) {
-        return undefined;
-    }
-    return currentPullRequest.number;
 }
 run();
 
