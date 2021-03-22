@@ -1,0 +1,14 @@
+name: 'Pull Request Automation'
+description: 'Provides some automation for common Pull Request Tasks.'
+author: 'DrBarnabus'
+inputs:
+  repo-token:
+    description: 'The GITHUB_TOKEN secret'
+  configuration-path:
+    description: 'The path labels configuration file'
+    default: '.github/pullrequest-automation.yml'
+    required: false
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
