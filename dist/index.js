@@ -53,51 +53,23 @@ function run() {
                 core.error('Could not determine current pull request number from context, exiting...');
                 return;
             }
-            const { data: pullRequest } = yield client.pulls.get({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                pull_number: prNumber
-            });
-            const baseRef = pullRequest.base.ref;
-            core.info(`Evaluating: PR #${pullRequest.number} - '${pullRequest.title}' with BaseRef of ${baseRef}`);
-            const { data: currentLabels } = yield client.issues.listLabelsOnIssue({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                issue_number: prNumber
-            });
-            let branchLabelToApply = null;
-            for (let { target, startsWith, label } of configuration.branchLabeller) {
-                if ((baseRef == target && !startsWith) || (baseRef.startsWith(target) && startsWith)) {
-                    branchLabelToApply = label;
-                    break;
-                }
-            }
+            const { data: pullRequest } = yield getPullRequest(client, prNumber);
+            core.info(`Evaluating: PR #${pullRequest.number} - '${pullRequest.title}' with BaseRef of ${pullRequest.base.ref}`);
+            const { data: currentLabels } = yield getLabelsOnIssue(client, prNumber);
+            let branchLabelToApply = getBranchLabelToApply(pullRequest.base.ref, configuration);
             if (branchLabelToApply != null) {
                 if (currentLabels.some(l => l.name == branchLabelToApply)) {
                     core.info(`Branch Label of ${branchLabelToApply} is already applied.`);
                 }
                 else {
                     core.info(`Adding Branch Label of ${branchLabelToApply} based on base commit ref.`);
-                    yield client.issues.addLabels({
-                        owner: github_1.context.repo.owner,
-                        repo: github_1.context.repo.repo,
-                        issue_number: prNumber,
-                        labels: [
-                            branchLabelToApply
-                        ]
-                    }).catch(_ => { });
+                    yield addLabelsIfMissing(client, prNumber, [branchLabelToApply], currentLabels);
                     core.info(`Removing Branch Labels that no longer apply.`);
                     let labelRemoved = false;
                     for (let { label } of configuration.branchLabeller) {
                         if (label == branchLabelToApply)
                             continue;
-                        if (currentLabels.some(l => l.name == label)) {
-                            yield client.issues.removeLabel({
-                                owner: github_1.context.repo.owner,
-                                repo: github_1.context.repo.repo,
-                                issue_number: prNumber,
-                                name: label
-                            }).catch(_ => { });
+                        if (yield removeLabelIfPresent(client, prNumber, label, currentLabels)) {
                             labelRemoved = true;
                         }
                     }
@@ -139,66 +111,37 @@ function run() {
                     core.info(`Review from User ${(_c = pullRequestReview.user) === null || _c === void 0 ? void 0 : _c.login} reviewed at ${pullRequestReview.submitted_at} was not APPROVED/CHANGES_REQUESTED ignoring.`);
                 }
             }
-            let totalApproved = 0;
-            let isRejected = false;
+            let totalApproved = 0, isApproved = false, isRejected = false;
             for (let [user, state] of reviewStateMap) {
                 core.info(`${user} ended with state of ${state}`);
-                if (state === 'CHANGES_REQUESTED') {
-                    isRejected = true;
+                switch (state) {
+                    case 'APPROVED':
+                        ++totalApproved;
+                        isApproved = totalApproved >= configuration.requiredApprovals;
+                        break;
+                    case 'CHANGES_REQUESTED':
+                        isRejected = true;
+                        break;
+                }
+                if (isApproved || isRejected)
                     break;
-                }
-                if (state === 'APPROVED') {
-                    ++totalApproved;
-                }
             }
-            let isApproved = totalApproved >= configuration.requiredApprovals;
-            core.info(`TotalApproved: ${totalApproved}, ApprovalsRequired: ${configuration.requiredApprovals}, IsApproved ${isApproved}, IsRejected: ${isRejected}`);
-            if (isRejected) {
-                yield client.issues.addLabels({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    labels: [
-                        configuration.labels.rejected
-                    ]
-                }).catch(_ => { });
-                yield client.issues.removeLabel({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    name: configuration.labels.approved
-                }).catch(_ => { });
+            core.info(`Approvals: ${totalApproved}/${configuration.requiredApprovals}, IsApproved ${isApproved}, IsRejected: ${isRejected}`);
+            if (isApproved) {
+                yield addLabelsIfMissing(client, prNumber, [configuration.labels.approved], currentLabels);
+                yield removeLabelIfPresent(client, prNumber, configuration.labels.rejected, currentLabels);
+                yield removeLabelIfPresent(client, prNumber, configuration.labels.needsReview, currentLabels);
             }
-            else if (isApproved) {
-                yield client.issues.addLabels({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    labels: [
-                        configuration.labels.approved
-                    ]
-                }).catch(_ => { });
-                yield client.issues.removeLabel({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    name: configuration.labels.rejected
-                }).catch(_ => { });
+            else if (isRejected) {
+                yield addLabelsIfMissing(client, prNumber, [configuration.labels.rejected], currentLabels);
+                yield removeLabelIfPresent(client, prNumber, configuration.labels.approved, currentLabels);
+                yield removeLabelIfPresent(client, prNumber, configuration.labels.needsReview, currentLabels);
             }
             else {
-                yield client.issues.removeLabel({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    name: configuration.labels.approved
-                }).catch(_ => { });
-                yield client.issues.removeLabel({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: prNumber,
-                    name: configuration.labels.rejected
-                }).catch(_ => { });
-                if (github_1.context.eventName === 'pull_request') {
+                yield addLabelsIfMissing(client, prNumber, [configuration.labels.needsReview], currentLabels);
+                let wasApproved = yield removeLabelIfPresent(client, prNumber, configuration.labels.approved, currentLabels);
+                let wasRejected = yield removeLabelIfPresent(client, prNumber, configuration.labels.rejected, currentLabels);
+                if (github_1.context.eventName === 'pull_request' && (wasApproved || wasRejected)) {
                     yield client.issues.createComment({
                         owner: github_1.context.repo.owner,
                         repo: github_1.context.repo.repo,
@@ -212,6 +155,72 @@ function run() {
             core.error(error);
             core.setFailed(error.message);
         }
+    });
+}
+function getBranchLabelToApply(baseRef, configuration) {
+    for (let { target, startsWith, label } of configuration.branchLabeller) {
+        if ((baseRef == target && !startsWith) || (baseRef.startsWith(target) && startsWith)) {
+            return label;
+        }
+    }
+    return null;
+}
+function addLabelsIfMissing(client, issueNumber, labelsToAdd, currentLabelsObject) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const currentLabels = currentLabelsObject.map(l => l.name);
+        let finalLabelsToAdd = new Array();
+        for (let labelToAdd of labelsToAdd) {
+            if (currentLabels.includes(labelToAdd)) {
+                core.info(`Label ${labelToAdd} already exists on #${issueNumber}`);
+            }
+            else {
+                finalLabelsToAdd.push(labelToAdd);
+                core.info(`Label ${labelToAdd} needs to be added to #${issueNumber}`);
+            }
+        }
+        yield client.issues.addLabels({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            issue_number: issueNumber,
+            labels: finalLabelsToAdd
+        }).catch(_ => { });
+    });
+}
+function removeLabelIfPresent(client, issueNumber, labelToRemove, currentLabelsObject) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const currentLabels = currentLabelsObject.map(l => l.name);
+        if (!currentLabels.includes(labelToRemove)) {
+            core.info(`Label ${labelToRemove} does not exist on #${issueNumber}`);
+            return false;
+        }
+        else {
+            core.info(`Label ${labelToRemove} needs to be removed from #${issueNumber}`);
+            yield client.issues.removeLabel({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber,
+                name: labelToRemove
+            }).catch(_ => { });
+            return true;
+        }
+    });
+}
+function getLabelsOnIssue(client, issueNumber) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return client.issues.listLabelsOnIssue({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            issue_number: issueNumber
+        });
+    });
+}
+function getPullRequest(client, prNumber) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return client.pulls.get({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            pull_number: prNumber
+        });
     });
 }
 function getConfiguration(client, configurationPath) {

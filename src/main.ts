@@ -13,7 +13,7 @@ interface BranchLabellerConfiguration {
 
 interface Configuration {
     requiredApprovals: number;
-    labels: { approved: string, rejected: string };
+    labels: { approved: string, rejected: string, needsReview: string };
     branchLabeller: BranchLabellerConfiguration[];
 }
 
@@ -33,58 +33,26 @@ async function run() {
             return;
         }
 
-        const { data: pullRequest } = await client.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: prNumber
-        });
-
-        const baseRef = pullRequest.base.ref;
-        core.info(`Evaluating: PR #${pullRequest.number} - '${pullRequest.title}' with BaseRef of ${baseRef}`);
+        const { data: pullRequest } = await getPullRequest(client, prNumber);
+        core.info(`Evaluating: PR #${pullRequest.number} - '${pullRequest.title}' with BaseRef of ${pullRequest.base.ref}`);
         
-        const { data: currentLabels } = await client.issues.listLabelsOnIssue({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: prNumber
-        });
+        const { data: currentLabels } = await getLabelsOnIssue(client, prNumber);
 
-        let branchLabelToApply: string | null = null;
-        for (let { target, startsWith, label } of configuration.branchLabeller) {
-            if ((baseRef == target && !startsWith) || (baseRef.startsWith(target) && startsWith)) {
-                branchLabelToApply = label;
-                break;
-            }
-        }
-        
+        let branchLabelToApply: string | null = getBranchLabelToApply(pullRequest.base.ref, configuration);
         if (branchLabelToApply != null) {
             if (currentLabels.some(l => l.name == branchLabelToApply)) {
                 core.info(`Branch Label of ${branchLabelToApply} is already applied.`);
             } else {
                 core.info(`Adding Branch Label of ${branchLabelToApply} based on base commit ref.`);
-                await client.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: [
-                        branchLabelToApply
-                    ]
-                }).catch(_ => {});
+                await addLabelsIfMissing(client, prNumber, [ branchLabelToApply ], currentLabels);
 
                 core.info(`Removing Branch Labels that no longer apply.`);
-
                 let labelRemoved = false;
                 for (let { label } of configuration.branchLabeller) {
                     if (label == branchLabelToApply)
                         continue;
                     
-                    if (currentLabels.some(l => l.name == label)) {
-                        await client.issues.removeLabel({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            issue_number: prNumber,
-                            name: label
-                        }).catch(_ => {});
-
+                    if (await removeLabelIfPresent(client, prNumber, label, currentLabels)) {
                         labelRemoved = true;
                     }
                 }
@@ -130,72 +98,38 @@ async function run() {
             }
         }
         
-        let totalApproved = 0;
-        let isRejected = false;
+        let totalApproved = 0, isApproved = false, isRejected = false;
         for (let [user, state] of reviewStateMap) {
             core.info(`${user} ended with state of ${state}`);
-            if (state === 'CHANGES_REQUESTED') {
-                isRejected = true;
-                break;
+            switch (state) {
+                case 'APPROVED':
+                    ++totalApproved;
+                    isApproved = totalApproved >= configuration.requiredApprovals;
+                    break;
+                case 'CHANGES_REQUESTED':
+                    isRejected = true;
+                    break;
             }
 
-            if (state === 'APPROVED') {
-                ++totalApproved;
-            }
+            if (isApproved || isRejected) break;
         }
 
-        let isApproved = totalApproved >= configuration.requiredApprovals;
+        core.info(`Approvals: ${totalApproved}/${configuration.requiredApprovals}, IsApproved ${isApproved}, IsRejected: ${isRejected}`);
 
-        core.info(`TotalApproved: ${totalApproved}, ApprovalsRequired: ${configuration.requiredApprovals}, IsApproved ${isApproved}, IsRejected: ${isRejected}`);
+         if (isApproved) {
+            await addLabelsIfMissing(client, prNumber, [ configuration.labels.approved ], currentLabels);
+            await removeLabelIfPresent(client, prNumber, configuration.labels.rejected, currentLabels);
+            await removeLabelIfPresent(client, prNumber, configuration.labels.needsReview, currentLabels);
+        } else if (isRejected) {
+            await addLabelsIfMissing(client, prNumber, [ configuration.labels.rejected ], currentLabels);
+            await removeLabelIfPresent(client, prNumber, configuration.labels.approved, currentLabels);
+            await removeLabelIfPresent(client, prNumber, configuration.labels.needsReview, currentLabels);
+        }  else {
+            await addLabelsIfMissing(client, prNumber, [ configuration.labels.needsReview ], currentLabels);
+            let wasApproved = await removeLabelIfPresent(client, prNumber, configuration.labels.approved, currentLabels);
+            let wasRejected = await removeLabelIfPresent(client, prNumber, configuration.labels.rejected, currentLabels);
 
-        if (isRejected) {
-            await client.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                labels: [
-                    configuration.labels.rejected
-                ]
-            }).catch(_ => {});
-
-            await client.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                name: configuration.labels.approved
-            }).catch(_ => {});
-        } else if (isApproved) {
-            await client.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                labels: [
-                    configuration.labels.approved
-                ]
-            }).catch(_ => {});
-
-            await client.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                name: configuration.labels.rejected
-            }).catch(_ => {});
-        } else {
-            await client.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                name: configuration.labels.approved
-            }).catch(_ => {});
-
-            await client.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                name: configuration.labels.rejected
-            }).catch(_ => {});
-
-            if (context.eventName === 'pull_request') {
+            if (context.eventName === 'pull_request' && (wasApproved || wasRejected)) {
                 await client.issues.createComment({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -208,6 +142,73 @@ async function run() {
         core.error(error);
         core.setFailed(error.message);
     }
+}
+
+function getBranchLabelToApply(baseRef: string, configuration: Configuration): string | null {
+    for (let { target, startsWith, label } of configuration.branchLabeller) {
+        if ((baseRef == target && !startsWith) || (baseRef.startsWith(target) && startsWith)) {
+            return label;
+        }
+    }
+
+    return null;
+}
+
+async function addLabelsIfMissing(client: GitHubClient, issueNumber: number, labelsToAdd: string[], currentLabelsObject: { name: string }[]) {
+    const currentLabels = currentLabelsObject.map(l => l.name);
+
+    let finalLabelsToAdd = new Array<string>();
+    for (let labelToAdd of labelsToAdd) {
+        if (currentLabels.includes(labelToAdd)) {
+            core.info(`Label ${labelToAdd} already exists on #${issueNumber}`);
+        } else {
+            finalLabelsToAdd.push(labelToAdd);
+            core.info(`Label ${labelToAdd} needs to be added to #${issueNumber}`);
+        }
+    }
+
+    await client.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: issueNumber,
+        labels: finalLabelsToAdd
+    }).catch(_ => {});
+}
+
+async function removeLabelIfPresent(client: GitHubClient, issueNumber: number, labelToRemove: string, currentLabelsObject: { name: string }[]) {
+    const currentLabels = currentLabelsObject.map(l => l.name);
+
+    if (!currentLabels.includes(labelToRemove)) {
+        core.info(`Label ${labelToRemove} does not exist on #${issueNumber}`);
+        return false;
+    } else {
+        core.info(`Label ${labelToRemove} needs to be removed from #${issueNumber}`);
+
+        await client.issues.removeLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            name: labelToRemove
+        }).catch(_ => {});
+
+        return true;
+    }
+}
+
+async function getLabelsOnIssue(client: GitHubClient, issueNumber: number) {
+    return client.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: issueNumber
+    });
+}
+
+async function getPullRequest(client: GitHubClient, prNumber: number) {
+    return client.pulls.get({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: prNumber
+    });
 }
 
 async function getConfiguration(client: GitHubClient, configurationPath: string): Promise<Configuration> {
