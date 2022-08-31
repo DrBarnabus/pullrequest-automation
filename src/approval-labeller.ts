@@ -1,5 +1,5 @@
 import { logDebug, logInfo, logWarning } from "./core";
-import { getPullRequestResponse, GitHubClient, listLabelsOnIssueResponse, listReviewsOnPullRequest, listReviewsOnPullRequestResponse } from "./github-client";
+import { getPullRequestResponse, GitHubClient, listReviewsOnPullRequest, listReviewsOnPullRequestResponse } from "./github-client";
 import { ApprovalLabels } from "./models/config";
 
 type approvalLabellerProps = {
