@@ -1,42 +1,44 @@
 {
-  "name": "github-pullrequest-automation",
-  "version": "1.0.0",
-  "description": "Provides some automation for common Pull Request Tasks.",
+  "name": "@drbarnabus/pullrequest-automation",
+  "version": "2.0.0-beta.0",
+  "description": "A GitHub Action to automate a number of common pull request tasks in a GitHub Repository.",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc && ncc build lib/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DrBarnabus/github-pullrequest-automation.git"
   },
   "keywords": [
-    "github",
-    "actions",
-    "pull",
-    "request",
-    "pr",
-    "pull-request",
-    "automation",
-    "labeller",
-    "label"
+    "GitHub Actions",
+    "GitHub",
+    "Actions",
+    "Pull Request",
+    "Pull",
+    "Request",
+    "Automation",
+    "Labeller",
+    "Approval",
+    "Approval Labeller"
   ],
   "author": "DrBarnabus",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DrBarnabus/github-pullrequest-automation/issues"
+    "url": "https://github.com/DrBarnabus/pullrequest-automation/issues"
   },
-  "homepage": "https://github.com/DrBarnabus/github-pullrequest-automation#readme",
+  "homepage": "https://github.com/DrBarnabus/pullrequest-automation#readme",
   "dependencies": {
-    "@actions/core": "^1.2.6",
-    "@actions/github": "^4.0.0",
-    "js-yaml": "^4.0.0"
+    "@actions/core": "^1.9.1",
+    "@actions/github": "^5.0.3",
+    "yaml": "^2.1.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.0",
-    "@types/node": "^14.14.35",
-    "@vercel/ncc": "^0.27.0",
-    "typescript": "^4.2.3"
+    "@octokit/types": "^7.1.1",
+    "@types/node": "^18.7.13",
+    "@vercel/ncc": "^0.34.0",
+    "husky": "^8.0.0",
+    "typescript": "^4.8.2"
   }
 }
