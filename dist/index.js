@@ -93,6 +93,67 @@ function addLabelIfMissing(labels, labelToAdd) {
 
 /***/ }),
 
+/***/ 5355:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processBranchLabeller = void 0;
+const core_1 = __nccwpck_require__(2298);
+async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels }) {
+    const prBaseRef = pullRequest.base.ref;
+    const prHeadRef = pullRequest.head.ref;
+    (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
+    for (const { baseRef, headRef, labelToApply } of branchLabels) {
+        const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
+        if (!applies) {
+            (0, core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
+            removeLabelIfPresent(desiredLabels, labelToApply);
+            continue;
+        }
+        (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+        addLabelIfMissing(desiredLabels, labelToApply);
+    }
+}
+exports.processBranchLabeller = processBranchLabeller;
+function checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
+    const baseRefExpression = new RegExp(`^${baseRef}$`);
+    if (!baseRefExpression.test(prBaseRef)) {
+        return false;
+    }
+    if (headRef) {
+        const headRefExpression = new RegExp(`^${headRef}$`);
+        if (!headRefExpression.test(prHeadRef)) {
+            return false;
+        }
+    }
+    return true;
+}
+function removeLabelIfPresent(labels, labelToRemove) {
+    const index = labels.indexOf(labelToRemove);
+    if (index === -1) {
+        return false;
+    }
+    else {
+        labels.splice(index, 1);
+        return true;
+    }
+}
+function addLabelIfMissing(labels, labelToAdd) {
+    const index = labels.indexOf(labelToAdd);
+    if (index === -1) {
+        return true;
+    }
+    else {
+        labels.push(labelToAdd);
+        return false;
+    }
+}
+
+
+/***/ }),
+
 /***/ 88:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -18188,6 +18249,7 @@ var exports = __webpack_exports__;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const github_1 = __nccwpck_require__(5438);
 const approval_labeller_1 = __nccwpck_require__(7296);
+const branch_labeller_1 = __nccwpck_require__(5355);
 const config_1 = __nccwpck_require__(88);
 const core_1 = __nccwpck_require__(2298);
 const github_client_1 = __nccwpck_require__(4072);
@@ -18217,7 +18279,9 @@ async function processPullRequest(gitHubClient, config, pullRequestNumber) {
     const currentLabels = await (0, github_client_1.listLabelsOnIssue)(gitHubClient, pullRequestNumber);
     const desiredLabels = currentLabels.map((l) => l.name);
     await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
+    await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
     await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels);
+    (0, core_1.logInfo)('Finished');
 }
 
 })();

@@ -1,5 +1,6 @@
 import { context } from '@actions/github';
 import { processApprovalLabeller } from './approval-labeller';
+import { processBranchLabeller } from './branch-labeller';
 import { Config, loadConfig, } from './config';
 import { getInput, logError, logInfo, setFailed } from './core';
 import { getGitHubClient, getPullRequest, GitHubClient, listLabelsOnIssue, setLabelsOnIssue } from './github-client'
@@ -36,6 +37,9 @@ async function processPullRequest(gitHubClient: GitHubClient, config: Config, pu
     const desiredLabels: string[] = currentLabels.map((l) => l.name);
 
     await processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
+    await processBranchLabeller({ pullRequest, branchLabels: config.branchLabels, desiredLabels })
 
     await setLabelsOnIssue(gitHubClient, pullRequestNumber, desiredLabels);
+
+    logInfo('Finished');
 }
