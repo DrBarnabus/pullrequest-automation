@@ -18479,7 +18479,7 @@ async function processCommentCommands(gitHubClient, config, payload) {
     const comment = payload.comment;
     (0, core_1.logInfo)(`Processing comment ${comment.html_url}`);
     (0, core_1.logDebug)(`Comment body:\n${comment.body}`);
-    const pullRequestNumber = (_b = payload.pull_request) === null || _b === void 0 ? void 0 : _b.number;
+    const pullRequestNumber = (_b = payload.issue) === null || _b === void 0 ? void 0 : _b.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }

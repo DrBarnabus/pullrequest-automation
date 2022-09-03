@@ -77,7 +77,7 @@ async function processCommentCommands(gitHubClient: GitHubClient, config: Config
     logInfo(`Processing comment ${comment.html_url}`);
     logDebug(`Comment body:\n${comment.body}`);
 
-    const pullRequestNumber = payload.pull_request?.number;
+    const pullRequestNumber = payload.issue?.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
