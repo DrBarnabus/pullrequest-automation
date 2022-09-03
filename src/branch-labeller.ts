@@ -40,7 +40,7 @@ export async function processBranchLabeller({
             }
 
             logInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
-            desiredLabels.remove(labelToApply);
+            desiredLabels.add(labelToApply);
         }
     } finally {
         endGroup();

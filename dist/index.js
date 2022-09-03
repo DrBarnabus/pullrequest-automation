@@ -114,7 +114,7 @@ async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels 
                 continue;
             }
             (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
-            desiredLabels.remove(labelToApply);
+            desiredLabels.add(labelToApply);
         }
     }
     finally {
