@@ -94,7 +94,7 @@ function removeLabelIfPresent(labels: string[], labelToRemove: string): boolean 
 
 function addLabelIfMissing(labels: string[], labelToAdd: string): boolean {
     const index = labels.indexOf(labelToAdd);
-    if (index === -1) {
+    if (index !== -1) {
         return true;
     } else {
         labels.push(labelToAdd);

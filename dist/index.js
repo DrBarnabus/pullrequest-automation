@@ -81,7 +81,7 @@ function removeLabelIfPresent(labels, labelToRemove) {
 }
 function addLabelIfMissing(labels, labelToAdd) {
     const index = labels.indexOf(labelToAdd);
-    if (index === -1) {
+    if (index !== -1) {
         return true;
     }
     else {
@@ -142,7 +142,7 @@ function removeLabelIfPresent(labels, labelToRemove) {
 }
 function addLabelIfMissing(labels, labelToAdd) {
     const index = labels.indexOf(labelToAdd);
-    if (index === -1) {
+    if (index !== -1) {
         return true;
     }
     else {
