@@ -68,8 +68,8 @@ async function processCommentCommands(gitHubClient: GitHubClient, config: Config
         throw new Error(`Unable to extract comment from context payload`);
     }
 
-    if (!payload.pull_request) {
-        throw new Error(`Unable to extract pullRequest from context payload`);
+    if (!payload.issue?.pull_request) {
+        throw new Error(`Unable to extract issue.pull_request from context payload`);
     }
 
     const comment = payload.comment;

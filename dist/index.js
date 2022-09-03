@@ -18469,17 +18469,17 @@ async function applyLabelState(gitHubClient, pullRequestNumber, desiredLabels) {
     (0, core_1.endGroup)();
 }
 async function processCommentCommands(gitHubClient, config, payload) {
-    var _a;
+    var _a, _b;
     if (!payload.comment) {
         throw new Error(`Unable to extract comment from context payload`);
     }
-    if (!payload.pull_request) {
-        throw new Error(`Unable to extract pullRequest from context payload`);
+    if (!((_a = payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request)) {
+        throw new Error(`Unable to extract issue.pull_request from context payload`);
     }
     const comment = payload.comment;
     (0, core_1.logInfo)(`Processing comment ${comment.html_url}`);
     (0, core_1.logDebug)(`Comment body:\n${comment.body}`);
-    const pullRequestNumber = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
+    const pullRequestNumber = (_b = payload.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
