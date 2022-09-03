@@ -3,7 +3,7 @@ import { WebhookPayload } from '@actions/github/lib/interfaces';
 import { processApprovalLabeller } from './approval-labeller';
 import { processBranchLabeller } from './branch-labeller';
 import { Config, loadConfig, } from './config';
-import { endGroup, logError, logInfo, setFailed, startGroup } from './core';
+import { endGroup, logDebug, logError, logInfo, setFailed, startGroup } from './core';
 import { DesiredLabels } from './desired-labels';
 import { getGitHubClient, getPullRequest, GitHubClient, listLabelsOnIssue, setLabelsOnIssue } from './github-client'
 
@@ -14,8 +14,9 @@ async function main() {
 
         const eventName = context.eventName;
         logInfo(`Workflow triggered by ${eventName}`);
+        logDebug(`Payload: ${JSON.stringify(context.payload, null, 2)}`);
 
-        if (eventName === 'pull_request_target' || 'pull_request_review') {
+        if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             await processPullRequest(gitHubClient, config, context.payload);
         } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request != null) {
             await processComment(gitHubClient, config, context.payload);

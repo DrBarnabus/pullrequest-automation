@@ -18337,10 +18337,16 @@ async function main() {
         const config = await (0, config_1.loadConfig)(gitHubClient);
         const eventName = github_1.context.eventName;
         (0, core_1.logInfo)(`Workflow triggered by ${eventName}`);
-        if (eventName === 'pull_request_target' || 'pull_request_review') {
+        (0, core_1.logDebug)(`Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
+        if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             await processPullRequest(gitHubClient, config, github_1.context.payload);
         }
-        else {}
+        else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
+            await processComment(gitHubClient, config, github_1.context.payload);
+        }
+        else {
+            throw new Error('Unable to determine correct action based on triggering event');
+        }
     }
     catch (error) {
         (0, core_1.logError)(error.message);
