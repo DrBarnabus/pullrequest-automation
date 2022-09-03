@@ -39,7 +39,6 @@ async function processPullRequest(gitHubClient: GitHubClient, config: Config, pu
     await processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await processBranchLabeller({ pullRequest, branchLabels: config.branchLabels, desiredLabels })
 
-    logInfo(`Updating labels to be ${JSON.stringify(desiredLabels)}`);
     await setLabelsOnIssue(gitHubClient, pullRequestNumber, desiredLabels);
 
     logInfo('Finished');

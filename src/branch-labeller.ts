@@ -1,4 +1,4 @@
-import { logDebug, logInfo } from "./core"
+import { endGroup, logDebug, logInfo, startGroup } from "./core"
 import { getPullRequestResponse } from "./github-client"
 import { BranchLabels } from "./models/config"
 
@@ -13,6 +13,8 @@ export async function processBranchLabeller({
     branchLabels,
     desiredLabels
 }: branchLabellerProps) {
+    startGroup('Branch Labeller');
+    
     const prBaseRef = pullRequest.base.ref;
     const prHeadRef = pullRequest.head.ref;
 
@@ -30,6 +32,8 @@ export async function processBranchLabeller({
         logInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
         addLabelIfMissing(desiredLabels, labelToApply);
     }
+
+    endGroup();
 }
 
 function checkIfApplies(prBaseRef: string, prHeadRef: string, baseRef: string, headRef?: string) {

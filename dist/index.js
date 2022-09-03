@@ -11,6 +11,7 @@ exports.processApprovalLabeller = void 0;
 const core_1 = __nccwpck_require__(2298);
 const github_client_1 = __nccwpck_require__(4072);
 async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels, desiredLabels }) {
+    (0, core_1.startGroup)('Approval Labeller');
     const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
     const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
     const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
@@ -27,6 +28,7 @@ async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabe
     else {
         addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.needsReview);
     }
+    (0, core_1.endGroup)();
 }
 exports.processApprovalLabeller = processApprovalLabeller;
 function getReviewStatuses(pullRequest, pullRequestReviews) {
@@ -102,6 +104,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.processBranchLabeller = void 0;
 const core_1 = __nccwpck_require__(2298);
 async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels }) {
+    (0, core_1.startGroup)('Branch Labeller');
     const prBaseRef = pullRequest.base.ref;
     const prHeadRef = pullRequest.head.ref;
     (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
@@ -115,6 +118,7 @@ async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels 
         (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
         addLabelIfMissing(desiredLabels, labelToApply);
     }
+    (0, core_1.endGroup)();
 }
 exports.processBranchLabeller = processBranchLabeller;
 function checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
@@ -185,7 +189,7 @@ exports.loadConfig = loadConfig;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
+exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
 const core_1 = __nccwpck_require__(2186);
 Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
 Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
@@ -193,6 +197,8 @@ Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function 
 Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
 Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
 Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
+Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
+Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
 
 
 /***/ }),
@@ -205,20 +211,23 @@ Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function (
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
+const core_1 = __nccwpck_require__(2298);
 function getGitHubClient(token) {
     return (0, github_1.getOctokit)(token);
 }
 exports.getGitHubClient = getGitHubClient;
 async function fetchContent(gitHubClient, path) {
     try {
+        (0, core_1.logDebug)(`GitHubClient repos.getContent: ${path}`);
         const response = await gitHubClient.rest.repos.getContent({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
             path: path,
             ref: github_1.context.sha
         });
-        if (Array.isArray(response.data))
-            return null;
+        if (Array.isArray(response.data)) {
+            throw new Error('Expected file not directory');
+        }
         const data = response.data;
         return Buffer.from(data.content, data.encoding).toString();
     }
@@ -229,6 +238,7 @@ async function fetchContent(gitHubClient, path) {
 exports.fetchContent = fetchContent;
 async function getPullRequest(gitHubClient, pullNumber) {
     try {
+        (0, core_1.logDebug)(`GitHubClient pulls.get: ${pullNumber}`);
         const { data } = await gitHubClient.rest.pulls.get({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -243,6 +253,7 @@ async function getPullRequest(gitHubClient, pullNumber) {
 exports.getPullRequest = getPullRequest;
 async function listReviewsOnPullRequest(gitHubClient, pullNumber) {
     try {
+        (0, core_1.logDebug)(`GitHubClient pulls.listReviews: ${pullNumber}`);
         const { data } = await gitHubClient.rest.pulls.listReviews({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -257,6 +268,7 @@ async function listReviewsOnPullRequest(gitHubClient, pullNumber) {
 exports.listReviewsOnPullRequest = listReviewsOnPullRequest;
 async function listLabelsOnIssue(gitHubClient, issueNumber) {
     try {
+        (0, core_1.logDebug)(`GitHubClient issues.listLabelsOnIssue: ${issueNumber}`);
         const { data } = await gitHubClient.rest.issues.listLabelsOnIssue({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -271,6 +283,7 @@ async function listLabelsOnIssue(gitHubClient, issueNumber) {
 exports.listLabelsOnIssue = listLabelsOnIssue;
 async function setLabelsOnIssue(gitHubClient, issueNumber, labels) {
     try {
+        (0, core_1.logDebug)(`GitHubClient issues.setLabels: ${issueNumber}, ${JSON.stringify(labels)}`);
         const { data } = await gitHubClient.rest.issues.setLabels({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
@@ -18280,7 +18293,6 @@ async function processPullRequest(gitHubClient, config, pullRequestNumber) {
     const desiredLabels = currentLabels.map((l) => l.name);
     await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
-    (0, core_1.logInfo)(`Updating labels to be ${JSON.stringify(desiredLabels)}`);
     await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels);
     (0, core_1.logInfo)('Finished');
 }

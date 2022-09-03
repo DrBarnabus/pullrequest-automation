@@ -1,5 +1,6 @@
 import { getOctokit, context } from '@actions/github';
 import { components } from '@octokit/openapi-types'
+import { logDebug } from './core';
 
 export type GitHubClient = ReturnType<typeof getOctokit>;
 
@@ -7,10 +8,9 @@ export function getGitHubClient(token: string): GitHubClient {
     return getOctokit(token);
 }
 
-type GetRepoContentsResponseDataFile = components['schemas']['content-file'];
-
 export async function fetchContent(gitHubClient: GitHubClient, path: string) {
     try {
+        logDebug(`GitHubClient repos.getContent: ${path}`);
         const response = await gitHubClient.rest.repos.getContent({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -18,8 +18,11 @@ export async function fetchContent(gitHubClient: GitHubClient, path: string) {
             ref: context.sha
         });
     
-        if (Array.isArray(response.data)) return null;
+        if (Array.isArray(response.data)) {
+            throw new Error('Expected file not directory');
+        }
     
+        type GetRepoContentsResponseDataFile = components['schemas']['content-file'];
         const data = response.data as GetRepoContentsResponseDataFile;
         return Buffer.from(data.content, data.encoding as BufferEncoding).toString();
     } catch (error) {
@@ -30,6 +33,7 @@ export async function fetchContent(gitHubClient: GitHubClient, path: string) {
 export type getPullRequestResponse = Awaited<ReturnType<typeof getPullRequest>>;
 export async function getPullRequest(gitHubClient: GitHubClient, pullNumber: number) {
     try {
+        logDebug(`GitHubClient pulls.get: ${pullNumber}`);
         const { data } = await gitHubClient.rest.pulls.get({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -45,6 +49,7 @@ export async function getPullRequest(gitHubClient: GitHubClient, pullNumber: num
 export type listReviewsOnPullRequestResponse = Awaited<ReturnType<typeof listReviewsOnPullRequest>>;
 export async function listReviewsOnPullRequest(gitHubClient: GitHubClient, pullNumber: number) {
     try {
+        logDebug(`GitHubClient pulls.listReviews: ${pullNumber}`);
         const { data } = await gitHubClient.rest.pulls.listReviews({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -60,6 +65,7 @@ export async function listReviewsOnPullRequest(gitHubClient: GitHubClient, pullN
 export type listLabelsOnIssueResponse = Awaited<ReturnType<typeof listLabelsOnIssue>>;
 export async function listLabelsOnIssue(gitHubClient: GitHubClient, issueNumber: number) {
     try {
+        logDebug(`GitHubClient issues.listLabelsOnIssue: ${issueNumber}`);
         const { data } = await gitHubClient.rest.issues.listLabelsOnIssue({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -75,6 +81,7 @@ export async function listLabelsOnIssue(gitHubClient: GitHubClient, issueNumber:
 export type setLabelsOnIssueResponse = Awaited<ReturnType<typeof setLabelsOnIssue>>;
 export async function setLabelsOnIssue(gitHubClient: GitHubClient, issueNumber: number, labels: string[]) {
     try {
+        logDebug(`GitHubClient issues.setLabels: ${issueNumber}, ${JSON.stringify(labels)}`);
         const { data } = await gitHubClient.rest.issues.setLabels({
             owner: context.repo.owner,
             repo: context.repo.repo,

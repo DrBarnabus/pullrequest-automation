@@ -1,4 +1,4 @@
-import { logDebug, logInfo, logWarning } from "./core";
+import { endGroup, logDebug, logInfo, logWarning, startGroup } from "./core";
 import { getPullRequestResponse, GitHubClient, listReviewsOnPullRequest, listReviewsOnPullRequestResponse } from "./github-client";
 import { ApprovalLabels } from "./models/config";
 
@@ -15,6 +15,8 @@ export async function processApprovalLabeller({
     approvalLabels,
     desiredLabels
 }: approvalLabellerProps) {
+    startGroup('Approval Labeller');
+
     const pullRequestReviews = await listReviewsOnPullRequest(gitHubClient, pullRequest.number);
 
     const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
@@ -33,6 +35,8 @@ export async function processApprovalLabeller({
     } else {
         addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.needsReview);
     }
+
+    endGroup();
 }
 
 function getReviewStatuses(pullRequest: getPullRequestResponse, pullRequestReviews: listReviewsOnPullRequestResponse) {

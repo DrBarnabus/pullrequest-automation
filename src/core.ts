@@ -1,4 +1,4 @@
-import { debug, info, warning, error, getInput, setFailed } from '@actions/core';
+import { debug, info, warning, error, getInput, setFailed, startGroup, endGroup } from '@actions/core';
 
 export {
     debug as logDebug,
@@ -6,5 +6,7 @@ export {
     warning as logWarning,
     error as logError,
     getInput,
-    setFailed
+    setFailed,
+    startGroup,
+    endGroup
 };
