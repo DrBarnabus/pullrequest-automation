@@ -1,10 +1,11 @@
 import { getOctokit, context } from '@actions/github';
 import { components } from '@octokit/openapi-types'
-import { logDebug } from './core';
+import { getInput, logDebug } from './core';
 
 export type GitHubClient = ReturnType<typeof getOctokit>;
 
-export function getGitHubClient(token: string): GitHubClient {
+export function getGitHubClient(): GitHubClient {
+    const token = getInput('github-token', { required: true });
     return getOctokit(token);
 }
 

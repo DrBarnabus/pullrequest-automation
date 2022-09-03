@@ -12,23 +12,31 @@ const core_1 = __nccwpck_require__(2298);
 const github_client_1 = __nccwpck_require__(4072);
 async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels, desiredLabels }) {
     (0, core_1.startGroup)('Approval Labeller');
-    const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
-    const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
-    const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
-    (0, core_1.logInfo)(`Approvals: ${totalApproved}/${approvalLabels.requiredApprovals} (IsApproved=${isApproved}, IsRejected=${isRejected})`);
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.approved);
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.rejected);
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.needsReview);
-    if (isApproved) {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.approved);
+    try {
+        const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
+        const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
+        const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
+        (0, core_1.logInfo)(`Approvals: ${totalApproved}/${approvalLabels.requiredApprovals} (IsApproved=${isApproved}, IsRejected=${isRejected})`);
+        const labelsToApply = approvalLabels.labelsToApply;
+        desiredLabels.remove(labelsToApply.approved);
+        desiredLabels.remove(labelsToApply.rejected);
+        desiredLabels.remove(labelsToApply.needsReview);
+        if (isApproved) {
+            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
+            desiredLabels.add(labelsToApply.approved);
+        }
+        else if (isRejected) {
+            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.approved} as a review contained CHANGES_REQUESTED`);
+            desiredLabels.add(labelsToApply.rejected);
+        }
+        else {
+            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.needsReview} as required reviews not met`);
+            desiredLabels.add(labelsToApply.needsReview);
+        }
     }
-    else if (isRejected) {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.rejected);
+    finally {
+        (0, core_1.endGroup)();
     }
-    else {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.needsReview);
-    }
-    (0, core_1.endGroup)();
 }
 exports.processApprovalLabeller = processApprovalLabeller;
 function getReviewStatuses(pullRequest, pullRequestReviews) {
@@ -71,26 +79,6 @@ function calculateReviewStatus(reviewStatuses, approvalLabels) {
     }
     return { totalApproved, isApproved, isRejected };
 }
-function removeLabelIfPresent(labels, labelToRemove) {
-    const index = labels.indexOf(labelToRemove);
-    if (index === -1) {
-        return false;
-    }
-    else {
-        labels.splice(index, 1);
-        return true;
-    }
-}
-function addLabelIfMissing(labels, labelToAdd) {
-    const index = labels.indexOf(labelToAdd);
-    if (index !== -1) {
-        return true;
-    }
-    else {
-        labels.push(labelToAdd);
-        return false;
-    }
-}
 
 
 /***/ }),
@@ -105,20 +93,27 @@ exports.processBranchLabeller = void 0;
 const core_1 = __nccwpck_require__(2298);
 async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels }) {
     (0, core_1.startGroup)('Branch Labeller');
-    const prBaseRef = pullRequest.base.ref;
-    const prHeadRef = pullRequest.head.ref;
-    (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
-    for (const { baseRef, headRef, labelToApply } of branchLabels) {
-        const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
-        if (!applies) {
-            (0, core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
-            removeLabelIfPresent(desiredLabels, labelToApply);
-            continue;
+    try {
+        const prBaseRef = pullRequest.base.ref;
+        const prHeadRef = pullRequest.head.ref;
+        (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
+        for (const { baseRef, headRef, labelToApply } of branchLabels) {
+            const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
+            if (!applies) {
+                (0, core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
+                const removed = desiredLabels.remove(labelToApply);
+                if (removed) {
+                    (0, core_1.logInfo)(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
+                }
+                continue;
+            }
+            (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+            desiredLabels.remove(labelToApply);
         }
-        (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
-        addLabelIfMissing(desiredLabels, labelToApply);
     }
-    (0, core_1.endGroup)();
+    finally {
+        (0, core_1.endGroup)();
+    }
 }
 exports.processBranchLabeller = processBranchLabeller;
 function checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
@@ -134,51 +129,53 @@ function checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
     }
     return true;
 }
-function removeLabelIfPresent(labels, labelToRemove) {
-    const index = labels.indexOf(labelToRemove);
-    if (index === -1) {
-        return false;
-    }
-    else {
-        labels.splice(index, 1);
-        return true;
-    }
-}
-function addLabelIfMissing(labels, labelToAdd) {
-    const index = labels.indexOf(labelToAdd);
-    if (index !== -1) {
-        return true;
-    }
-    else {
-        labels.push(labelToAdd);
-        return false;
-    }
-}
 
 
 /***/ }),
 
 /***/ 88:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.loadConfig = void 0;
-const core_1 = __nccwpck_require__(2186);
+const core_1 = __nccwpck_require__(2298);
 const yaml_1 = __nccwpck_require__(4083);
 const github_client_1 = __nccwpck_require__(4072);
-async function loadConfig(client, configPath) {
-    (0, core_1.info)(`Loading config from ${configPath}`);
-    const configFileContents = await (0, github_client_1.fetchContent)(client, configPath);
-    if (configFileContents === null) {
-        throw new Error(`Unable to load config from ${configPath}`);
+async function loadConfig(client) {
+    (0, core_1.startGroup)('Load Config');
+    try {
+        const configPath = (0, core_1.getInput)('config-path', { required: true });
+        (0, core_1.logInfo)(`Loading config from ${configPath}`);
+        const configFileContents = await (0, github_client_1.fetchContent)(client, configPath);
+        if (configFileContents === null) {
+            throw new Error(`Unable to load config from ${configPath}`);
+        }
+        const config = (0, yaml_1.parse)(configFileContents);
+        (0, core_1.logInfo)(`Loaded config from ${configPath}\n${JSON.stringify(config)}`);
+        return config;
     }
-    const config = (0, yaml_1.parse)(configFileContents);
-    (0, core_1.debug)(`Loaded config from ${configPath}\n${JSON.stringify(config)}`);
-    return config;
+    finally {
+        (0, core_1.endGroup)();
+    }
 }
 exports.loadConfig = loadConfig;
+__exportStar(__nccwpck_require__(1583), exports);
 
 
 /***/ }),
@@ -203,6 +200,48 @@ Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function ()
 
 /***/ }),
 
+/***/ 2858:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DesiredLabels = void 0;
+class DesiredLabels {
+    constructor(existingLabels) {
+        this.existingLabels = existingLabels;
+        this.labels = [...existingLabels];
+    }
+    add(labelToAdd) {
+        const index = this.labels.indexOf(labelToAdd);
+        if (index !== 1) {
+            // Label already added
+            return false;
+        }
+        else {
+            // Label must be added
+            this.labels.push(labelToAdd);
+            return true;
+        }
+    }
+    remove(labelToRemove) {
+        const index = this.labels.indexOf(labelToRemove);
+        if (index === -1) {
+            // Label already removed
+            return false;
+        }
+        else {
+            // Label must be removed
+            this.labels.splice(index, 1);
+            return true;
+        }
+    }
+}
+exports.DesiredLabels = DesiredLabels;
+
+
+/***/ }),
+
 /***/ 4072:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -212,7 +251,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2298);
-function getGitHubClient(token) {
+function getGitHubClient() {
+    const token = (0, core_1.getInput)('github-token', { required: true });
     return (0, github_1.getOctokit)(token);
 }
 exports.getGitHubClient = getGitHubClient;
@@ -297,6 +337,16 @@ async function setLabelsOnIssue(gitHubClient, issueNumber, labels) {
     }
 }
 exports.setLabelsOnIssue = setLabelsOnIssue;
+
+
+/***/ }),
+
+/***/ 1583:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -18265,14 +18315,13 @@ const approval_labeller_1 = __nccwpck_require__(7296);
 const branch_labeller_1 = __nccwpck_require__(5355);
 const config_1 = __nccwpck_require__(88);
 const core_1 = __nccwpck_require__(2298);
+const desired_labels_1 = __nccwpck_require__(2858);
 const github_client_1 = __nccwpck_require__(4072);
 async function main() {
     var _a;
     try {
-        const token = (0, core_1.getInput)('github-token', { required: true });
-        const gitHubClient = (0, github_client_1.getGitHubClient)(token);
-        const configPath = (0, core_1.getInput)('config-path', { required: true });
-        const config = await (0, config_1.loadConfig)(gitHubClient, configPath);
+        const gitHubClient = (0, github_client_1.getGitHubClient)();
+        const config = await (0, config_1.loadConfig)(gitHubClient);
         (0, core_1.logInfo)(`Workflow triggered by ${github_1.context.eventName}`);
         const pullRequestNumber = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
         if (!pullRequestNumber) {
@@ -18285,17 +18334,25 @@ async function main() {
         (0, core_1.setFailed)(error.message);
     }
 }
-main();
 async function processPullRequest(gitHubClient, config, pullRequestNumber) {
     const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
     (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
-    const currentLabels = await (0, github_client_1.listLabelsOnIssue)(gitHubClient, pullRequestNumber);
-    const desiredLabels = currentLabels.map((l) => l.name);
+    const existingLabels = await (0, github_client_1.listLabelsOnIssue)(gitHubClient, pullRequestNumber);
+    const desiredLabels = new desired_labels_1.DesiredLabels(existingLabels.map((l) => l.name));
     await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
-    await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels);
-    (0, core_1.logInfo)('Finished');
+    await applyLabelState(gitHubClient, pullRequestNumber, desiredLabels);
+    (0, core_1.logInfo)('Finished processing');
 }
+async function applyLabelState(gitHubClient, pullRequestNumber, desiredLabels) {
+    (0, core_1.startGroup)('Apply Labels');
+    (0, core_1.logInfo)(`Current State of Labels: ${JSON.stringify(desiredLabels.existingLabels)}`);
+    (0, core_1.logInfo)(`Desired State of Labels: ${JSON.stringify(desiredLabels.labels)}`);
+    await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels.labels);
+    (0, core_1.logInfo)('Labels have been set');
+    (0, core_1.endGroup)();
+}
+main();
 
 })();
 

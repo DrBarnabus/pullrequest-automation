@@ -1,4 +1,5 @@
 import { endGroup, logDebug, logInfo, logWarning, startGroup } from "./core";
+import { DesiredLabels } from "./desired-labels";
 import { getPullRequestResponse, GitHubClient, listReviewsOnPullRequest, listReviewsOnPullRequestResponse } from "./github-client";
 import { ApprovalLabels } from "./models/config";
 
@@ -6,7 +7,7 @@ type approvalLabellerProps = {
     gitHubClient: GitHubClient,
     pullRequest: getPullRequestResponse,
     approvalLabels: ApprovalLabels;
-    desiredLabels: string[];
+    desiredLabels: DesiredLabels;
 }
 
 export async function processApprovalLabeller({
@@ -17,26 +18,32 @@ export async function processApprovalLabeller({
 }: approvalLabellerProps) {
     startGroup('Approval Labeller');
 
-    const pullRequestReviews = await listReviewsOnPullRequest(gitHubClient, pullRequest.number);
+    try {
+        const pullRequestReviews = await listReviewsOnPullRequest(gitHubClient, pullRequest.number);
 
-    const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
-    const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
+        const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
+        const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
 
-    logInfo(`Approvals: ${totalApproved}/${approvalLabels.requiredApprovals} (IsApproved=${isApproved}, IsRejected=${isRejected})`);
+        logInfo(`Approvals: ${totalApproved}/${approvalLabels.requiredApprovals} (IsApproved=${isApproved}, IsRejected=${isRejected})`);
 
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.approved);
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.rejected);
-    removeLabelIfPresent(desiredLabels, approvalLabels.labelsToApply.needsReview);
+        const labelsToApply = approvalLabels.labelsToApply;
+        desiredLabels.remove(labelsToApply.approved);
+        desiredLabels.remove(labelsToApply.rejected);
+        desiredLabels.remove(labelsToApply.needsReview);
 
-    if (isApproved) {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.approved);
-    } else if (isRejected) {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.rejected);
-    } else {
-        addLabelIfMissing(desiredLabels, approvalLabels.labelsToApply.needsReview);
+        if (isApproved) {
+            logInfo(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
+            desiredLabels.add(labelsToApply.approved);
+        } else if (isRejected) {
+            logInfo(`Adding approval label ${labelsToApply.approved} as a review contained CHANGES_REQUESTED`);
+            desiredLabels.add(labelsToApply.rejected);
+        } else {
+            logInfo(`Adding approval label ${labelsToApply.needsReview} as required reviews not met`);
+            desiredLabels.add(labelsToApply.needsReview);
+        }
+    } finally {
+        endGroup();
     }
-
-    endGroup();
 }
 
 function getReviewStatuses(pullRequest: getPullRequestResponse, pullRequestReviews: listReviewsOnPullRequestResponse) {
@@ -84,24 +91,4 @@ function calculateReviewStatus(reviewStatuses: Map<string, string>, approvalLabe
     }
 
     return { totalApproved, isApproved, isRejected };
-}
-
-function removeLabelIfPresent(labels: string[], labelToRemove: string): boolean {
-    const index = labels.indexOf(labelToRemove);
-    if (index === -1) {
-        return false;
-    } else {
-        labels.splice(index, 1);
-        return true;
-    }
-}
-
-function addLabelIfMissing(labels: string[], labelToAdd: string): boolean {
-    const index = labels.indexOf(labelToAdd);
-    if (index !== -1) {
-        return true;
-    } else {
-        labels.push(labelToAdd);
-        return false;
-    }
 }

@@ -1,11 +1,12 @@
 import { endGroup, logDebug, logInfo, startGroup } from "./core"
+import { DesiredLabels } from "./desired-labels"
 import { getPullRequestResponse } from "./github-client"
 import { BranchLabels } from "./models/config"
 
 type branchLabellerProps = {
     pullRequest: getPullRequestResponse,
     branchLabels: BranchLabels[],
-    desiredLabels: string[]
+    desiredLabels: DesiredLabels
 }
 
 export async function processBranchLabeller({
@@ -15,25 +16,31 @@ export async function processBranchLabeller({
 }: branchLabellerProps) {
     startGroup('Branch Labeller');
     
-    const prBaseRef = pullRequest.base.ref;
-    const prHeadRef = pullRequest.head.ref;
+    try {
+        const prBaseRef = pullRequest.base.ref;
+        const prHeadRef = pullRequest.head.ref;
 
-    logInfo(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
+        logInfo(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
 
-    for (const { baseRef, headRef, labelToApply } of branchLabels) {
-        const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
-        if (!applies) {
-            logDebug(`Ignoring branch label ${labelToApply} rules not matched`);
+        for (const { baseRef, headRef, labelToApply } of branchLabels) {
+            const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
+            if (!applies) {
+                logDebug(`Ignoring branch label ${labelToApply} rules not matched`);
 
-            removeLabelIfPresent(desiredLabels, labelToApply);
-            continue;
+                const removed = desiredLabels.remove(labelToApply);
+                if (removed) {
+                    logInfo(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
+                }
+
+                continue;
+            }
+
+            logInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+            desiredLabels.remove(labelToApply);
         }
-
-        logInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
-        addLabelIfMissing(desiredLabels, labelToApply);
+    } finally {
+        endGroup();
     }
-
-    endGroup();
 }
 
 function checkIfApplies(prBaseRef: string, prHeadRef: string, baseRef: string, headRef?: string) {
@@ -50,24 +57,4 @@ function checkIfApplies(prBaseRef: string, prHeadRef: string, baseRef: string, h
     }
 
     return true;
-}
-
-function removeLabelIfPresent(labels: string[], labelToRemove: string): boolean {
-    const index = labels.indexOf(labelToRemove);
-    if (index === -1) {
-        return false;
-    } else {
-        labels.splice(index, 1);
-        return true;
-    }
-}
-
-function addLabelIfMissing(labels: string[], labelToAdd: string): boolean {
-    const index = labels.indexOf(labelToAdd);
-    if (index !== -1) {
-        return true;
-    } else {
-        labels.push(labelToAdd);
-        return false;
-    }
 }
