@@ -18258,7 +18258,7 @@ async function main() {
     try {
         const token = (0, core_1.getInput)('github-token', { required: true });
         const gitHubClient = (0, github_client_1.getGitHubClient)(token);
-        const configPath = (0, core_1.getInput)('configuration-path', { required: true });
+        const configPath = (0, core_1.getInput)('config-path', { required: true });
         const config = await (0, config_1.loadConfig)(gitHubClient, configPath);
         (0, core_1.logInfo)(`Workflow triggered by ${github_1.context.eventName}`);
         const pullRequestNumber = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;

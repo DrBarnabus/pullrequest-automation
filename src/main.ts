@@ -10,7 +10,7 @@ async function main() {
         const token = getInput('github-token', { required: true });
         const gitHubClient: GitHubClient = getGitHubClient(token);
         
-        const configPath = getInput('configuration-path', { required: true });
+        const configPath = getInput('config-path', { required: true });
         const config = await loadConfig(gitHubClient, configPath);
 
         logInfo(`Workflow triggered by ${context.eventName}`);
