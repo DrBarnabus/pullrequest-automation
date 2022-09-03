@@ -19,6 +19,10 @@ export async function processApprovalLabeller({
     startGroup('Approval Labeller');
 
     try {
+        if (approvalLabels.disable) {
+            logInfo('Approval labeller is disabled in config. Skipping...');
+        }
+
         const pullRequestReviews = await listReviewsOnPullRequest(gitHubClient, pullRequest.number);
 
         const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);

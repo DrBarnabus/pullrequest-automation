@@ -5,6 +5,7 @@ export interface LabelsToApply {
 }
 
 export interface ApprovalLabels {
+    disable?: boolean;
     requiredApprovals: number;
     labelsToApply: LabelsToApply;
 }

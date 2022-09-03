@@ -13,6 +13,9 @@ const github_client_1 = __nccwpck_require__(4072);
 async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels, desiredLabels }) {
     (0, core_1.startGroup)('Approval Labeller');
     try {
+        if (approvalLabels.disable) {
+            (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
+        }
         const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
         const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
         const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
@@ -94,10 +97,13 @@ const core_1 = __nccwpck_require__(2298);
 async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels }) {
     (0, core_1.startGroup)('Branch Labeller');
     try {
+        if (branchLabels.disable) {
+            (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
+        }
         const prBaseRef = pullRequest.base.ref;
         const prHeadRef = pullRequest.head.ref;
         (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
-        for (const { baseRef, headRef, labelToApply } of branchLabels) {
+        for (const { baseRef, headRef, labelToApply } of branchLabels.rules) {
             const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
             if (!applies) {
                 (0, core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
@@ -214,7 +220,7 @@ class DesiredLabels {
     }
     add(labelToAdd) {
         const index = this.labels.indexOf(labelToAdd);
-        if (index !== 1) {
+        if (index !== -1) {
             // Label already added
             return false;
         }

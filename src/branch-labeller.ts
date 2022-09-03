@@ -5,7 +5,7 @@ import { BranchLabels } from "./models/config"
 
 type branchLabellerProps = {
     pullRequest: getPullRequestResponse,
-    branchLabels: BranchLabels[],
+    branchLabels: BranchLabels,
     desiredLabels: DesiredLabels
 }
 
@@ -17,12 +17,16 @@ export async function processBranchLabeller({
     startGroup('Branch Labeller');
     
     try {
+        if (branchLabels.disable) {
+            logInfo('Approval labeller is disabled in config. Skipping...');
+        }
+
         const prBaseRef = pullRequest.base.ref;
         const prHeadRef = pullRequest.head.ref;
 
         logInfo(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
 
-        for (const { baseRef, headRef, labelToApply } of branchLabels) {
+        for (const { baseRef, headRef, labelToApply } of branchLabels.rules) {
             const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
             if (!applies) {
                 logDebug(`Ignoring branch label ${labelToApply} rules not matched`);

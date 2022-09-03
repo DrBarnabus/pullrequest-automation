@@ -10,7 +10,7 @@ export class DesiredLabels
 
     add(labelToAdd: string): boolean {
         const index = this.labels.indexOf(labelToAdd);
-        if (index !== 1) {
+        if (index !== -1) {
             // Label already added
             return false;
         } else {

@@ -3,7 +3,7 @@ import { BranchLabels } from "./branch-labels";
 
 interface Config {
     approvalLabels: ApprovalLabels;
-    branchLabels: BranchLabels[];
+    branchLabels: BranchLabels;
 }
 
 export {
