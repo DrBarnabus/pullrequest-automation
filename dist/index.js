@@ -261,7 +261,7 @@ exports.DesiredLabels = DesiredLabels;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createReactionForIssueComment = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.fetchContent = exports.getGitHubClient = void 0;
+exports.createReactionForIssueComment = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2298);
 function getGitHubClient() {
@@ -289,6 +289,22 @@ async function fetchContent(gitHubClient, path, ref) {
     }
 }
 exports.fetchContent = fetchContent;
+async function compareCommits(gitHubClient, base, head) {
+    try {
+        (0, core_1.logDebug)(`GitHubClient repos.compare: ${base}...${head}`);
+        const { data } = await gitHubClient.rest.repos.compareCommits({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            base,
+            head
+        });
+        return data;
+    }
+    catch (error) {
+        throw new Error(`Unable to compare base ${base} with head ${head}\n${error}`);
+    }
+}
+exports.compareCommits = compareCommits;
 async function getPullRequest(gitHubClient, pullNumber) {
     try {
         (0, core_1.logDebug)(`GitHubClient pulls.get: ${pullNumber}`);
@@ -380,6 +396,7 @@ exports.processMergeSafetyCommand = void 0;
 const core_1 = __nccwpck_require__(2298);
 const github_client_1 = __nccwpck_require__(4072);
 async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRequest }) {
+    var _a;
     (0, core_1.startGroup)('Command: MergeSafety');
     try {
         if (config.disable) {
@@ -405,13 +422,21 @@ async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRe
         const branchToProtect = getBranchToProtect(config, prBaseRef);
         ;
         if (!branchToProtect) {
-            (0, core_1.logInfo)(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
+            (0, core_1.logWarning)(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
+            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, 'confused');
             return true;
         }
         (0, core_1.logInfo)(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
-        // TODO: Check for commits in baseRef that are not in, if any then thumbs down otherwise thumbs up
-        // TODO: If thumbs down, then add a comment with the outstanding commits
-        await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '+1');
+        const response = await (0, github_client_1.compareCommits)(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
+        if (response.ahead_by >= 1) {
+            for (const commit of response.commits) {
+                (0, core_1.logInfo)(`Commit ahead: ${commit.commit.message} - ${commit.html_url} by ${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}`);
+            }
+            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '-1');
+        }
+        else {
+            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '+1');
+        }
         return true;
     }
     finally {

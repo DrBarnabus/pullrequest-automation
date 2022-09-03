@@ -1,6 +1,6 @@
 import { MergeSafety } from "./config";
 import { endGroup, logDebug, logInfo, logWarning, startGroup } from "./core";
-import { createReactionForIssueComment, getPullRequestResponse, GitHubClient } from "./github-client";
+import { compareCommits, createReactionForIssueComment, getPullRequestResponse, GitHubClient } from "./github-client";
 import { BranchToProtect } from "./models/config/merge-safety";
 
 type processMergeSafetyCommandProperties = {
@@ -42,17 +42,24 @@ export async function processMergeSafetyCommand({ gitHubClient, config, comment,
 
         const branchToProtect = getBranchToProtect(config, prBaseRef);;
         if (!branchToProtect) {
-            logInfo(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
+            logWarning(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
+
+            await createReactionForIssueComment(gitHubClient, comment.id, 'confused');
             return true;
         }
 
         logInfo(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
 
-        // TODO: Check for commits in baseRef that are not in, if any then thumbs down otherwise thumbs up
+        const response = await compareCommits(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
+        if (response.ahead_by >= 1) {
+            for (const commit of response.commits) {
+                logInfo(`Commit ahead: ${commit.commit.message} - ${commit.html_url} by ${commit.committer?.login}`)
+            }
 
-        // TODO: If thumbs down, then add a comment with the outstanding commits
-
-        await createReactionForIssueComment(gitHubClient, comment.id, '+1');
+            await createReactionForIssueComment(gitHubClient, comment.id, '-1');
+        } else {
+            await createReactionForIssueComment(gitHubClient, comment.id, '+1');
+        }
 
         return true;
     } finally {

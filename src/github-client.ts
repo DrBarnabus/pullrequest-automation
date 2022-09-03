@@ -31,6 +31,23 @@ export async function fetchContent(gitHubClient: GitHubClient, path: string, ref
     }
 }
 
+export type compareCommitsResponse = Awaited<ReturnType<typeof compareCommits>>;
+export async function compareCommits(gitHubClient: GitHubClient, base: string, head: string) {
+    try {
+        logDebug(`GitHubClient repos.compare: ${base}...${head}`);
+        const { data } = await gitHubClient.rest.repos.compareCommits({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            base,
+            head
+        });
+
+        return data;
+    } catch (error) {
+        throw new Error(`Unable to compare base ${base} with head ${head}\n${error}`);
+    }
+}
+
 export type getPullRequestResponse = Awaited<ReturnType<typeof getPullRequest>>;
 export async function getPullRequest(gitHubClient: GitHubClient, pullNumber: number) {
     try {
