@@ -9,14 +9,14 @@ export function getGitHubClient(): GitHubClient {
     return getOctokit(token);
 }
 
-export async function fetchContent(gitHubClient: GitHubClient, path: string) {
+export async function fetchContent(gitHubClient: GitHubClient, path: string, ref?: string) {
     try {
-        logDebug(`GitHubClient repos.getContent: ${path}`);
+        logDebug(`GitHubClient repos.getContent: ${path}, ${ref ?? context.sha}`);
         const response = await gitHubClient.rest.repos.getContent({
             owner: context.repo.owner,
             repo: context.repo.repo,
             path: path,
-            ref: context.sha
+            ref: ref ?? context.sha
         });
     
         if (Array.isArray(response.data)) {

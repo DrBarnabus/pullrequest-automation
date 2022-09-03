@@ -168,7 +168,11 @@ async function loadConfig(client) {
     try {
         const configPath = (0, core_1.getInput)('config-path', { required: true });
         (0, core_1.logInfo)(`Loading config from ${configPath}`);
-        const configFileContents = await (0, github_client_1.fetchContent)(client, configPath);
+        let configRef = (0, core_1.getInput)('config-ref');
+        if (configRef === '') {
+            configRef = undefined;
+        }
+        const configFileContents = await (0, github_client_1.fetchContent)(client, configPath, configRef);
         if (configFileContents === null) {
             throw new Error(`Unable to load config from ${configPath}`);
         }
@@ -262,14 +266,14 @@ function getGitHubClient() {
     return (0, github_1.getOctokit)(token);
 }
 exports.getGitHubClient = getGitHubClient;
-async function fetchContent(gitHubClient, path) {
+async function fetchContent(gitHubClient, path, ref) {
     try {
-        (0, core_1.logDebug)(`GitHubClient repos.getContent: ${path}`);
+        (0, core_1.logDebug)(`GitHubClient repos.getContent: ${path}, ${ref !== null && ref !== void 0 ? ref : github_1.context.sha}`);
         const response = await gitHubClient.rest.repos.getContent({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
             path: path,
-            ref: github_1.context.sha
+            ref: ref !== null && ref !== void 0 ? ref : github_1.context.sha
         });
         if (Array.isArray(response.data)) {
             throw new Error('Expected file not directory');

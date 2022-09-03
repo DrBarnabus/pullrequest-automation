@@ -10,7 +10,12 @@ export async function loadConfig(client: GitHubClient): Promise<Config> {
         const configPath = getInput('config-path', { required: true });
         logInfo(`Loading config from ${configPath}`);
 
-        const configFileContents = await fetchContent(client, configPath);
+        let configRef: string | undefined = getInput('config-ref');
+        if (configRef === '') {
+            configRef = undefined;
+        }
+
+        const configFileContents = await fetchContent(client, configPath, configRef);
         if (configFileContents === null) {
             throw new Error(`Unable to load config from ${configPath}`);
         }
