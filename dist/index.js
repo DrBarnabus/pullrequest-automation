@@ -18335,19 +18335,24 @@ async function main() {
     try {
         const gitHubClient = (0, github_client_1.getGitHubClient)();
         const config = await (0, config_1.loadConfig)(gitHubClient);
-        (0, core_1.logInfo)(`Workflow triggered by ${github_1.context.eventName}`);
-        const pullRequestNumber = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
-        if (!pullRequestNumber) {
-            throw new Error('Unable to determine pull request number from context');
+        const eventName = github_1.context.eventName;
+        (0, core_1.logInfo)(`Workflow triggered by ${eventName}`);
+        if (eventName === 'pull_request_target' || 'pull_request_review') {
+            await processPullRequest(gitHubClient, config, github_1.context.payload);
         }
-        await processPullRequest(gitHubClient, config, pullRequestNumber);
+        else {}
     }
     catch (error) {
         (0, core_1.logError)(error.message);
         (0, core_1.setFailed)(error.message);
     }
 }
-async function processPullRequest(gitHubClient, config, pullRequestNumber) {
+async function processPullRequest(gitHubClient, config, payload) {
+    var _a;
+    const pullRequestNumber = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
+    if (!pullRequestNumber) {
+        throw new Error('Unable to determine pull request number from context');
+    }
     const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
     (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     const existingLabels = await (0, github_client_1.listLabelsOnIssue)(gitHubClient, pullRequestNumber);
@@ -18364,6 +18369,21 @@ async function applyLabelState(gitHubClient, pullRequestNumber, desiredLabels) {
     await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels.labels);
     (0, core_1.logInfo)('Labels have been set');
     (0, core_1.endGroup)();
+}
+async function processComment(gitHubClient, config, payload) {
+    if (!payload.comment) {
+        throw new Error('Unable to extract comment from context payload');
+    }
+    const comment = payload.comment;
+    (0, core_1.logInfo)(`Processing comment ${comment.html_url}`);
+    if (comment.body.includes('Safe to Merge?')) {
+        await gitHubClient.rest.reactions.createForIssueComment({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            comment_id: comment.id,
+            content: '+1'
+        });
+    }
 }
 main();
 

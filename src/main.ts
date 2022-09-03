@@ -1,4 +1,5 @@
 import { context } from '@actions/github';
+import { WebhookPayload } from '@actions/github/lib/interfaces';
 import { processApprovalLabeller } from './approval-labeller';
 import { processBranchLabeller } from './branch-labeller';
 import { Config, loadConfig, } from './config';
@@ -11,21 +12,28 @@ async function main() {
         const gitHubClient: GitHubClient = getGitHubClient();
         const config = await loadConfig(gitHubClient);
 
-        logInfo(`Workflow triggered by ${context.eventName}`);
+        const eventName = context.eventName;
+        logInfo(`Workflow triggered by ${eventName}`);
 
-        const pullRequestNumber = context.payload.pull_request?.number;
-        if (!pullRequestNumber) {
-            throw new Error('Unable to determine pull request number from context');
+        if (eventName === 'pull_request_target' || 'pull_request_review') {
+            await processPullRequest(gitHubClient, config, context.payload);
+        } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request != null) {
+            await processComment(gitHubClient, config, context.payload);
+        } else {
+            throw new Error('Unable to determine correct action based on triggering event');
         }
-        
-        await processPullRequest(gitHubClient, config, pullRequestNumber);
     } catch (error: any) {
         logError(error.message);
         setFailed(error.message);
     }
 }
 
-async function processPullRequest(gitHubClient: GitHubClient, config: Config, pullRequestNumber: number) {
+async function processPullRequest(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
+    const pullRequestNumber = payload.pull_request?.number;
+    if (!pullRequestNumber) {
+        throw new Error('Unable to determine pull request number from context');
+    }
+
     const pullRequest = await getPullRequest(gitHubClient, pullRequestNumber);
     logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
@@ -48,9 +56,29 @@ async function applyLabelState(gitHubClient: GitHubClient, pullRequestNumber: nu
 
     await setLabelsOnIssue(gitHubClient, pullRequestNumber, desiredLabels.labels);
 
-    logInfo('Labels have been set')
+    logInfo('Labels have been set');
 
     endGroup();
 }
 
+async function processComment(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
+    if (!payload.comment) {
+        throw new Error('Unable to extract comment from context payload');
+    }
+
+    const comment = payload.comment;
+
+    logInfo(`Processing comment ${comment.html_url}`);
+
+    if (comment.body.includes('Safe to Merge?')) {
+        await gitHubClient.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: comment.id,
+            content: '+1'
+        });
+    }
+}
+
 main();
+
