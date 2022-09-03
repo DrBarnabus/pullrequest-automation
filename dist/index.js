@@ -18280,6 +18280,7 @@ async function processPullRequest(gitHubClient, config, pullRequestNumber) {
     const desiredLabels = currentLabels.map((l) => l.name);
     await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
+    (0, core_1.logInfo)(`Updating labels to be ${JSON.stringify(desiredLabels)}`);
     await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels);
     (0, core_1.logInfo)('Finished');
 }
