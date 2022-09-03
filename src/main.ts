@@ -6,6 +6,7 @@ import { Config, loadConfig, } from './config';
 import { endGroup, logDebug, logError, logInfo, setFailed, startGroup } from './core';
 import { DesiredLabels } from './desired-labels';
 import { getGitHubClient, getPullRequest, GitHubClient, listLabelsOnIssue, setLabelsOnIssue } from './github-client'
+import { processMergeSafetyCommand } from './merge-safety-command';
 
 async function main() {
     try {
@@ -19,7 +20,7 @@ async function main() {
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             await processPullRequest(gitHubClient, config, context.payload);
         } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request != null) {
-            await processComment(gitHubClient, config, context.payload);
+            await processCommentCommands(gitHubClient, config, context.payload);
         } else {
             throw new Error('Unable to determine correct action based on triggering event');
         }
@@ -62,23 +63,29 @@ async function applyLabelState(gitHubClient: GitHubClient, pullRequestNumber: nu
     endGroup();
 }
 
-async function processComment(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
+async function processCommentCommands(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
     if (!payload.comment) {
-        throw new Error('Unable to extract comment from context payload');
+        throw new Error(`Unable to extract comment from context payload`);
+    }
+
+    if (!payload.pull_request) {
+        throw new Error(`Unable to extract pullRequest from context payload`);
     }
 
     const comment = payload.comment;
 
     logInfo(`Processing comment ${comment.html_url}`);
+    logDebug(`Comment body:\n${comment.body}`);
 
-    if (comment.body.includes('Safe to Merge?')) {
-        await gitHubClient.rest.reactions.createForIssueComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            comment_id: comment.id,
-            content: '+1'
-        });
+    const pullRequestNumber = payload.pull_request?.number;
+    if (!pullRequestNumber) {
+        throw new Error('Unable to determine pull request number from context');
     }
+
+    const pullRequest = await getPullRequest(gitHubClient, pullRequestNumber);
+    logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+
+    await processMergeSafetyCommand({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
 }
 
 main();

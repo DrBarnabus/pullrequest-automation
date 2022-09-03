@@ -261,7 +261,7 @@ exports.DesiredLabels = DesiredLabels;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.fetchContent = exports.getGitHubClient = void 0;
+exports.createReactionForIssueComment = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2298);
 function getGitHubClient() {
@@ -350,6 +350,97 @@ async function setLabelsOnIssue(gitHubClient, issueNumber, labels) {
     }
 }
 exports.setLabelsOnIssue = setLabelsOnIssue;
+async function createReactionForIssueComment(gitHubClient, commentId, content) {
+    try {
+        (0, core_1.logDebug)(`GitHubClient reactions.createForIssueComment: ${commentId}, ${content}`);
+        const { data } = await gitHubClient.rest.reactions.createForIssueComment({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            comment_id: commentId,
+            content
+        });
+        return data;
+    }
+    catch (error) {
+        throw new Error(`Unable to create reaction on issue comment ${commentId}\n${error}`);
+    }
+}
+exports.createReactionForIssueComment = createReactionForIssueComment;
+
+
+/***/ }),
+
+/***/ 6005:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processMergeSafetyCommand = void 0;
+const core_1 = __nccwpck_require__(2298);
+const github_client_1 = __nccwpck_require__(4072);
+async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRequest }) {
+    (0, core_1.startGroup)('Command: MergeSafety');
+    try {
+        if (config.disable) {
+            (0, core_1.logInfo)('Command is disabled. Skipping...');
+            return false;
+        }
+        if (!config.branchesToProtect) {
+            (0, core_1.logWarning)(`Command is enabled but no branches are configured for protection, add branches or disable`);
+            return false;
+        }
+        if (!config.triggers) {
+            (0, core_1.logDebug)(`Command is enabled but no triggers configured, adding default trigger of 'Safe to merge?'`);
+            config.triggers = 'Safe to merge?';
+        }
+        const normalizedCommentBody = comment.body.toLowerCase();
+        const prBaseRef = pullRequest.base.ref;
+        const triggered = checkIfTriggered(normalizedCommentBody, config.triggers);
+        if (!triggered) {
+            (0, core_1.logDebug)(`Command has not been triggered`);
+            return false;
+        }
+        (0, core_1.logDebug)(`Command has been triggerred, checking config for protections...`);
+        const branchToProtect = getBranchToProtect(config, prBaseRef);
+        ;
+        if (!branchToProtect) {
+            (0, core_1.logInfo)(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
+            return true;
+        }
+        (0, core_1.logInfo)(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
+        // TODO: Check for commits in baseRef that are not in, if any then thumbs down otherwise thumbs up
+        // TODO: If thumbs down, then add a comment with the outstanding commits
+        await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '+1');
+        return true;
+    }
+    finally {
+        (0, core_1.endGroup)();
+    }
+}
+exports.processMergeSafetyCommand = processMergeSafetyCommand;
+function checkIfTriggered(normalizedCommentBody, triggers) {
+    if (typeof triggers === 'string') {
+        return normalizedCommentBody.includes(triggers.toLowerCase());
+    }
+    else if (Array.isArray(triggers)) {
+        for (const trigger of triggers) {
+            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
+            if (triggered) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function getBranchToProtect(config, prBaseRef) {
+    for (const potentialBranchToProtect of config.branchesToProtect) {
+        if (potentialBranchToProtect.baseRef === prBaseRef) {
+            return potentialBranchToProtect;
+        }
+    }
+    return null;
+}
 
 
 /***/ }),
@@ -18330,6 +18421,7 @@ const config_1 = __nccwpck_require__(88);
 const core_1 = __nccwpck_require__(2298);
 const desired_labels_1 = __nccwpck_require__(2858);
 const github_client_1 = __nccwpck_require__(4072);
+const merge_safety_command_1 = __nccwpck_require__(6005);
 async function main() {
     var _a;
     try {
@@ -18342,7 +18434,7 @@ async function main() {
             await processPullRequest(gitHubClient, config, github_1.context.payload);
         }
         else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
-            await processComment(gitHubClient, config, github_1.context.payload);
+            await processCommentCommands(gitHubClient, config, github_1.context.payload);
         }
         else {
             throw new Error('Unable to determine correct action based on triggering event');
@@ -18376,20 +18468,24 @@ async function applyLabelState(gitHubClient, pullRequestNumber, desiredLabels) {
     (0, core_1.logInfo)('Labels have been set');
     (0, core_1.endGroup)();
 }
-async function processComment(gitHubClient, config, payload) {
+async function processCommentCommands(gitHubClient, config, payload) {
+    var _a;
     if (!payload.comment) {
-        throw new Error('Unable to extract comment from context payload');
+        throw new Error(`Unable to extract comment from context payload`);
+    }
+    if (!payload.pull_request) {
+        throw new Error(`Unable to extract pullRequest from context payload`);
     }
     const comment = payload.comment;
     (0, core_1.logInfo)(`Processing comment ${comment.html_url}`);
-    if (comment.body.includes('Safe to Merge?')) {
-        await gitHubClient.rest.reactions.createForIssueComment({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            comment_id: comment.id,
-            content: '+1'
-        });
+    (0, core_1.logDebug)(`Comment body:\n${comment.body}`);
+    const pullRequestNumber = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
+    if (!pullRequestNumber) {
+        throw new Error('Unable to determine pull request number from context');
     }
+    const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
+    (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    await (0, merge_safety_command_1.processMergeSafetyCommand)({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
 }
 main();
 
