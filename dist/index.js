@@ -167,10 +167,13 @@ async function loadConfig(client) {
     (0, core_1.startGroup)('Load Config');
     try {
         const configPath = (0, core_1.getInput)('config-path', { required: true });
-        (0, core_1.logInfo)(`Loading config from ${configPath}`);
         let configRef = (0, core_1.getInput)('config-ref');
         if (configRef === '') {
             configRef = undefined;
+            (0, core_1.logInfo)(`Loading config from ${configPath} in current branch`);
+        }
+        else {
+            (0, core_1.logInfo)(`Loading config from ${configPath} in ${configRef}`);
         }
         const configFileContents = await (0, github_client_1.fetchContent)(client, configPath, configRef);
         if (configFileContents === null) {
