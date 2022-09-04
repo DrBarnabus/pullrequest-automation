@@ -445,11 +445,12 @@ async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRe
         (0, core_1.logInfo)(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
         const response = await (0, github_client_1.compareCommits)(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
         if (response.ahead_by >= 1) {
-            let body = `### Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
-            body += `\n\n`;
+            let body = `## Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
+            body += `\n\n<details>\n<summary>View Changes</summary>\n\n`;
             for (const commit of response.commits) {
                 body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}](${(_b = commit.committer) === null || _b === void 0 ? void 0 : _b.html_url})\n`;
             }
+            body += `\n</details>`;
             await (0, github_client_1.createCommentOnIssue)(gitHubClient, pullRequest.number, body);
             await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '-1');
         }

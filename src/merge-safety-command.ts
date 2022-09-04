@@ -52,12 +52,14 @@ export async function processMergeSafetyCommand({ gitHubClient, config, comment,
 
         const response = await compareCommits(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
         if (response.ahead_by >= 1) {
-            let body = `### Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
-            body += `\n\n`;
+            let body = `## Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
+            body += `\n\n<details>\n<summary>View Changes</summary>\n\n`;
 
             for (const commit of response.commits) {
                 body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${commit.committer?.login}](${commit.committer?.html_url})\n`;
             }
+
+            body += `\n</details>`
 
             await createCommentOnIssue(gitHubClient, pullRequest.number, body);
             await createReactionForIssueComment(gitHubClient, comment.id, '-1');
