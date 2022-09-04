@@ -412,7 +412,7 @@ exports.processMergeSafetyCommand = void 0;
 const core_1 = __nccwpck_require__(2298);
 const github_client_1 = __nccwpck_require__(4072);
 async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRequest }) {
-    var _a;
+    var _a, _b;
     (0, core_1.startGroup)('Command: MergeSafety');
     try {
         if (config.disable) {
@@ -448,7 +448,7 @@ async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRe
             let body = `### Outstanding changes in ${branchToProtect.comparisonHeadRef}`;
             body += `\n\n`;
             for (const commit of response.commits) {
-                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by ${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}\n`;
+                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}](${(_b = commit.committer) === null || _b === void 0 ? void 0 : _b.html_url})\n`;
             }
             await (0, github_client_1.createCommentOnIssue)(gitHubClient, pullRequest.number, body);
             await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '-1');

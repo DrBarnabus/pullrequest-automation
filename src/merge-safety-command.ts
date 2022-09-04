@@ -56,7 +56,7 @@ export async function processMergeSafetyCommand({ gitHubClient, config, comment,
             body += `\n\n`;
 
             for (const commit of response.commits) {
-                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by ${commit.committer?.login}\n`;
+                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${commit.committer?.login}](${commit.committer?.html_url})\n`;
             }
 
             await createCommentOnIssue(gitHubClient, pullRequest.number, body);
