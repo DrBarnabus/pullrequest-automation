@@ -52,7 +52,7 @@ export async function processMergeSafetyCommand({ gitHubClient, config, comment,
 
         const response = await compareCommits(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
         if (response.ahead_by >= 1) {
-            let body = `### Outstanding changes in ${branchToProtect.comparisonHeadRef}`;
+            let body = `### Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
             body += `\n\n`;
 
             for (const commit of response.commits) {
