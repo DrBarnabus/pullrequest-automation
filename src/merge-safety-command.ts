@@ -1,6 +1,6 @@
 import { MergeSafety } from "./config";
 import { endGroup, logDebug, logInfo, logWarning, startGroup } from "./core";
-import { compareCommits, createReactionForIssueComment, getPullRequestResponse, GitHubClient } from "./github-client";
+import { compareCommits, createCommentOnIssue, createReactionForIssueComment, getPullRequestResponse, GitHubClient } from "./github-client";
 import { BranchToProtect } from "./models/config/merge-safety";
 
 type processMergeSafetyCommandProperties = {
@@ -52,10 +52,14 @@ export async function processMergeSafetyCommand({ gitHubClient, config, comment,
 
         const response = await compareCommits(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
         if (response.ahead_by >= 1) {
+            let body = `### Outstanding changes in ${branchToProtect.comparisonHeadRef}`;
+            body += `\n\n`;
+
             for (const commit of response.commits) {
-                logInfo(`Commit ahead: ${commit.commit.message} - ${commit.html_url} by ${commit.committer?.login}`)
+                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by ${commit.committer?.login}\n`;
             }
 
+            await createCommentOnIssue(gitHubClient, pullRequest.number, body);
             await createReactionForIssueComment(gitHubClient, comment.id, '-1');
         } else {
             await createReactionForIssueComment(gitHubClient, comment.id, '+1');

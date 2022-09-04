@@ -113,6 +113,23 @@ export async function setLabelsOnIssue(gitHubClient: GitHubClient, issueNumber: 
     }
 }
 
+export type createCommentOnIssueResponse = Awaited<ReturnType<typeof createCommentOnIssue>>;
+export async function createCommentOnIssue(gitHubClient: GitHubClient, issueNumber: number, body: string) {
+    try {
+        logDebug(`GitHubClient issues.createComment: ${issueNumber}, ${body}`);
+        const { data } = await gitHubClient.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            body
+        });
+
+        return data;
+    } catch (error) {
+        throw new Error(`Unable to set labels on Issue ${issueNumber}\n${error}`);
+    }
+}
+
 export type createReactionForIssueCommentResponse = Awaited<ReturnType<typeof createReactionForIssueComment>>;
 export async function createReactionForIssueComment(gitHubClient: GitHubClient, commentId: number, content: '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes') {
     try {

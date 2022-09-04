@@ -261,7 +261,7 @@ exports.DesiredLabels = DesiredLabels;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createReactionForIssueComment = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
+exports.createReactionForIssueComment = exports.createCommentOnIssue = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2298);
 function getGitHubClient() {
@@ -366,6 +366,22 @@ async function setLabelsOnIssue(gitHubClient, issueNumber, labels) {
     }
 }
 exports.setLabelsOnIssue = setLabelsOnIssue;
+async function createCommentOnIssue(gitHubClient, issueNumber, body) {
+    try {
+        (0, core_1.logDebug)(`GitHubClient issues.createComment: ${issueNumber}, ${body}`);
+        const { data } = await gitHubClient.rest.issues.createComment({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            issue_number: issueNumber,
+            body
+        });
+        return data;
+    }
+    catch (error) {
+        throw new Error(`Unable to set labels on Issue ${issueNumber}\n${error}`);
+    }
+}
+exports.createCommentOnIssue = createCommentOnIssue;
 async function createReactionForIssueComment(gitHubClient, commentId, content) {
     try {
         (0, core_1.logDebug)(`GitHubClient reactions.createForIssueComment: ${commentId}, ${content}`);
@@ -429,9 +445,12 @@ async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRe
         (0, core_1.logInfo)(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
         const response = await (0, github_client_1.compareCommits)(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
         if (response.ahead_by >= 1) {
+            let body = `### Outstanding changes in ${branchToProtect.comparisonHeadRef}`;
+            body += `\n\n`;
             for (const commit of response.commits) {
-                (0, core_1.logInfo)(`Commit ahead: ${commit.commit.message} - ${commit.html_url} by ${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}`);
+                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by ${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}\n`;
             }
+            await (0, github_client_1.createCommentOnIssue)(gitHubClient, pullRequest.number, body);
             await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '-1');
         }
         else {
