@@ -18630,6 +18630,7 @@ async function processCommentCommands(gitHubClient, config, payload) {
     const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
     (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     await (0, merge_safety_command_1.processMergeSafetyCommand)({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
+    (0, core_1.logInfo)('Finished processing');
 }
 main();
 

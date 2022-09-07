@@ -31,9 +31,11 @@ branchLabels:
 name: Pull Request Automation
 on:
   pull_request_target:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, converted_to_draft, ready_for_review]
   pull_request_review:
     types: [submitted, edited, dismissed]
+  issue_comment:
+    types: [created]
 
 jobs:
   process:

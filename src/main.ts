@@ -88,6 +88,8 @@ async function processCommentCommands(gitHubClient: GitHubClient, config: Config
     logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
     await processMergeSafetyCommand({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
+
+    logInfo('Finished processing');
 }
 
 main();
