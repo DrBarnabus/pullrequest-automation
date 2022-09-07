@@ -39,7 +39,7 @@ jobs:
     name: Process
     runs-on: ubuntu-latest
     steps:
-    - uses: DrBarnabus/pullrequest-automation@main
+    - uses: DrBarnabus/pullrequest-automation@v2 # latest matching major version 'v2' or specific version 'v2.3.1' or branch 'main'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         config-ref: main
