@@ -543,7 +543,7 @@ async function processReviewerExpander({ gitHubClient, pullRequest, config }) {
     var _a;
     (0, core_1.startGroup)('Reviewer Expander');
     try {
-        if (config.disable) {
+        if (config === null || config === void 0 ? void 0 : config.disable) {
             (0, core_1.logInfo)(`Reviewer Expander is disabled, skipping...`);
             return;
         }

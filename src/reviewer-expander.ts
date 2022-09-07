@@ -5,7 +5,7 @@ import { getPullRequestResponse, GitHubClient, listMembersOfTeam, requestReviewe
 type reviewerExpanderProps = {
     gitHubClient: GitHubClient,
     pullRequest: getPullRequestResponse,
-    config: ReviewerExpander
+    config?: ReviewerExpander
 }
 
 export async function processReviewerExpander({
@@ -16,7 +16,7 @@ export async function processReviewerExpander({
     startGroup('Reviewer Expander');
 
     try {
-        if (config.disable) {
+        if (config?.disable) {
             logInfo(`Reviewer Expander is disabled, skipping...`);
             return;
         }
