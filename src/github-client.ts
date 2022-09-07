@@ -80,6 +80,23 @@ export async function listReviewsOnPullRequest(gitHubClient: GitHubClient, pullN
     }
 }
 
+export type requestReviewersOnPullRequestResponse = Awaited<ReturnType<typeof requestReviewersOnPullRequest>>;
+export async function requestReviewersOnPullRequest(gitHubClient: GitHubClient, pullNumber: number, reviewers: string[]) {
+    try {
+        logDebug(`GitHubClient pulls.requestReviewers: ${pullNumber}, ${JSON.stringify(reviewers)}`);
+        const { data } = await gitHubClient.rest.pulls.requestReviewers({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pullNumber,
+            reviewers
+        });
+
+        return data;
+    } catch (error) {
+        throw new Error(`Unable to request reviewers on pull request with PullNumber ${pullNumber}\n${error}`);
+    }
+}
+
 export type listLabelsOnIssueResponse = Awaited<ReturnType<typeof listLabelsOnIssue>>;
 export async function listLabelsOnIssue(gitHubClient: GitHubClient, issueNumber: number) {
     try {
@@ -144,5 +161,20 @@ export async function createReactionForIssueComment(gitHubClient: GitHubClient, 
         return data;
     } catch (error) {
         throw new Error(`Unable to create reaction on issue comment ${commentId}\n${error}`);
+    }
+}
+
+export type listMembersOfTeamResponse = Awaited<ReturnType<typeof listMembersOfTeam>>;
+export async function listMembersOfTeam(gitHubClient: GitHubClient, teamSlug: string) {
+    try {
+        logDebug(`GitHubClient teams.listMembersInOrg: ${teamSlug}`);
+        const { data } = await gitHubClient.rest.teams.listMembersInOrg({
+            org: context.repo.owner,
+            team_slug: teamSlug
+        });
+
+        return data;
+    } catch (error) {
+        throw new Error(`Unable to get members in team ${teamSlug}\n${error}`);
     }
 }

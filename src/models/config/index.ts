@@ -2,6 +2,7 @@ import { ApprovalLabels } from "./approval-labels";
 import { BranchLabels } from "./branch-labels";
 import { FeatureConfig } from "./feature-config";
 import { MergeSafety } from "./merge-safety";
+import { ReviewerExpander } from "./reviewer-expander";
 
 interface Commands {
     mergeSafety: MergeSafety;
@@ -10,6 +11,7 @@ interface Commands {
 interface Config {
     approvalLabels: ApprovalLabels;
     branchLabels: BranchLabels;
+    reviewerExpander: ReviewerExpander;
     commands: Commands;
 }
 
@@ -18,6 +20,7 @@ export {
     Commands,
     ApprovalLabels,
     BranchLabels,
+    ReviewerExpander,
     MergeSafety,
     FeatureConfig
 }

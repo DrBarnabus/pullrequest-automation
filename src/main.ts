@@ -7,6 +7,7 @@ import { endGroup, logDebug, logError, logInfo, setFailed, startGroup } from './
 import { DesiredLabels } from './desired-labels';
 import { getGitHubClient, getPullRequest, GitHubClient, listLabelsOnIssue, setLabelsOnIssue } from './github-client'
 import { processMergeSafetyCommand } from './merge-safety-command';
+import { processReviewerExpander } from './reviewer-expander';
 
 async function main() {
     try {
@@ -44,6 +45,7 @@ async function processPullRequest(gitHubClient: GitHubClient, config: Config, pa
 
     await processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await processBranchLabeller({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
+    await processReviewerExpander({ gitHubClient, pullRequest, config: config.reviewerExpander });
 
     await applyLabelState(gitHubClient, pullRequestNumber, desiredLabels);
 

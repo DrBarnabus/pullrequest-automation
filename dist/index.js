@@ -261,7 +261,7 @@ exports.DesiredLabels = DesiredLabels;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createReactionForIssueComment = exports.createCommentOnIssue = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
+exports.listMembersOfTeam = exports.createReactionForIssueComment = exports.createCommentOnIssue = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.requestReviewersOnPullRequest = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2298);
 function getGitHubClient() {
@@ -335,6 +335,22 @@ async function listReviewsOnPullRequest(gitHubClient, pullNumber) {
     }
 }
 exports.listReviewsOnPullRequest = listReviewsOnPullRequest;
+async function requestReviewersOnPullRequest(gitHubClient, pullNumber, reviewers) {
+    try {
+        (0, core_1.logDebug)(`GitHubClient pulls.requestReviewers: ${pullNumber}, ${JSON.stringify(reviewers)}`);
+        const { data } = await gitHubClient.rest.pulls.requestReviewers({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            pull_number: pullNumber,
+            reviewers
+        });
+        return data;
+    }
+    catch (error) {
+        throw new Error(`Unable to request reviewers on pull request with PullNumber ${pullNumber}\n${error}`);
+    }
+}
+exports.requestReviewersOnPullRequest = requestReviewersOnPullRequest;
 async function listLabelsOnIssue(gitHubClient, issueNumber) {
     try {
         (0, core_1.logDebug)(`GitHubClient issues.listLabelsOnIssue: ${issueNumber}`);
@@ -398,6 +414,20 @@ async function createReactionForIssueComment(gitHubClient, commentId, content) {
     }
 }
 exports.createReactionForIssueComment = createReactionForIssueComment;
+async function listMembersOfTeam(gitHubClient, teamSlug) {
+    try {
+        (0, core_1.logDebug)(`GitHubClient teams.listMembersInOrg: ${teamSlug}`);
+        const { data } = await gitHubClient.rest.teams.listMembersInOrg({
+            org: github_1.context.repo.owner,
+            team_slug: teamSlug
+        });
+        return data;
+    }
+    catch (error) {
+        throw new Error(`Unable to get members in team ${teamSlug}\n${error}`);
+    }
+}
+exports.listMembersOfTeam = listMembersOfTeam;
 
 
 /***/ }),
@@ -496,6 +526,58 @@ function getBranchToProtect(config, prBaseRef) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 3107:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processReviewerExpander = void 0;
+const core_1 = __nccwpck_require__(2298);
+const github_client_1 = __nccwpck_require__(4072);
+async function processReviewerExpander({ gitHubClient, pullRequest, config }) {
+    var _a;
+    (0, core_1.startGroup)('Reviewer Expander');
+    try {
+        if (config.disable) {
+            (0, core_1.logInfo)(`Reviewer Expander is disabled, skipping...`);
+            return;
+        }
+        if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
+            (0, core_1.logInfo)(`Nothing to expand as no requested_teams on the pull request`);
+            return;
+        }
+        if (pullRequest.requested_teams.length > 1) {
+            (0, core_1.logWarning)(`More than one team requested for review which is not currently supported`);
+            return;
+        }
+        const requestedTeam = pullRequest.requested_teams[0];
+        const teamMembers = await (0, github_client_1.listMembersOfTeam)(gitHubClient, requestedTeam.slug);
+        let reviewersToRequest = [];
+        for (const teamMember of teamMembers) {
+            const existingReviewer = (_a = pullRequest.requested_reviewers) === null || _a === void 0 ? void 0 : _a.findIndex((r) => r.login == teamMember.login);
+            if (existingReviewer === -1) {
+                reviewersToRequest.push(teamMember.login);
+            }
+        }
+        if (reviewersToRequest.length > 0) {
+            (0, core_1.logInfo)(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
+            await (0, github_client_1.requestReviewersOnPullRequest)(gitHubClient, pullRequest.number, reviewersToRequest);
+        }
+    }
+    catch (err) {
+        (0, core_1.logError)(`An error ocurred while processing reviewer expander: ${err}`);
+        throw err;
+    }
+    finally {
+        (0, core_1.endGroup)();
+    }
+}
+exports.processReviewerExpander = processReviewerExpander;
 
 
 /***/ }),
@@ -18467,6 +18549,7 @@ const core_1 = __nccwpck_require__(2298);
 const desired_labels_1 = __nccwpck_require__(2858);
 const github_client_1 = __nccwpck_require__(4072);
 const merge_safety_command_1 = __nccwpck_require__(6005);
+const reviewer_expander_1 = __nccwpck_require__(3107);
 async function main() {
     var _a;
     try {
@@ -18502,6 +18585,7 @@ async function processPullRequest(gitHubClient, config, payload) {
     const desiredLabels = new desired_labels_1.DesiredLabels(existingLabels.map((l) => l.name));
     await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
     await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
+    await (0, reviewer_expander_1.processReviewerExpander)({ gitHubClient, pullRequest, config: config.reviewerExpander });
     await applyLabelState(gitHubClient, pullRequestNumber, desiredLabels);
     (0, core_1.logInfo)('Finished processing');
 }
