@@ -35,6 +35,9 @@ async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabe
         desiredLabels.remove(labelsToApply.approved);
         desiredLabels.remove(labelsToApply.rejected);
         desiredLabels.remove(labelsToApply.needsReview);
+        if (labelsToApply.draft) {
+            desiredLabels.remove(labelsToApply.draft);
+        }
         if (isApproved) {
             (0, core_1.logInfo)(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
             desiredLabels.add(labelsToApply.approved);

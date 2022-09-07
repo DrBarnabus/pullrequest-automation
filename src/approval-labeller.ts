@@ -46,6 +46,9 @@ export async function processApprovalLabeller({
         desiredLabels.remove(labelsToApply.approved);
         desiredLabels.remove(labelsToApply.rejected);
         desiredLabels.remove(labelsToApply.needsReview);
+        if (labelsToApply.draft) {
+            desiredLabels.remove(labelsToApply.draft);
+        }
 
         if (isApproved) {
             logInfo(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
