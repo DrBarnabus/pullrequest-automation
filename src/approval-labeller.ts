@@ -21,6 +21,18 @@ export async function processApprovalLabeller({
     try {
         if (approvalLabels.disable) {
             logInfo('Approval labeller is disabled in config. Skipping...');
+            return;
+        }
+
+        if (pullRequest.draft) {
+            if (approvalLabels.labelsToApply.draft) {
+                logInfo(`Adding draft label ${approvalLabels.labelsToApply.draft} as pull request is currently a draft`);
+                desiredLabels.add(approvalLabels.labelsToApply.draft);
+            } else {
+                logInfo(`Pull request is currently a draft and no draft label is configured`);
+            }
+
+            return;
         }
 
         const pullRequestReviews = await listReviewsOnPullRequest(gitHubClient, pullRequest.number);
@@ -39,10 +51,10 @@ export async function processApprovalLabeller({
             logInfo(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
             desiredLabels.add(labelsToApply.approved);
         } else if (isRejected) {
-            logInfo(`Adding approval label ${labelsToApply.approved} as a review contained CHANGES_REQUESTED`);
+            logInfo(`Adding rejected label ${labelsToApply.rejected} as a review contained CHANGES_REQUESTED`);
             desiredLabels.add(labelsToApply.rejected);
         } else {
-            logInfo(`Adding approval label ${labelsToApply.needsReview} as required reviews not met`);
+            logInfo(`Adding needsReview label ${labelsToApply.needsReview} as required reviews not met`);
             desiredLabels.add(labelsToApply.needsReview);
         }
     } finally {

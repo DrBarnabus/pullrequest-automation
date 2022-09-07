@@ -19,6 +19,7 @@ export async function processBranchLabeller({
     try {
         if (branchLabels.disable) {
             logInfo('Approval labeller is disabled in config. Skipping...');
+            return;
         }
 
         const prBaseRef = pullRequest.base.ref;

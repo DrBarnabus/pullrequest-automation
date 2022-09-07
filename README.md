@@ -12,6 +12,7 @@ approvalLabels:
     approved: approved
     rejected: rejected
     needsReview: needs-review
+    draft: still-in-progress
 branchLabels:
   disable: false # Able to disable specific features
   rules:

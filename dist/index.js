@@ -15,6 +15,17 @@ async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabe
     try {
         if (approvalLabels.disable) {
             (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
+            return;
+        }
+        if (pullRequest.draft) {
+            if (approvalLabels.labelsToApply.draft) {
+                (0, core_1.logInfo)(`Adding draft label ${approvalLabels.labelsToApply.draft} as pull request is currently a draft`);
+                desiredLabels.add(approvalLabels.labelsToApply.draft);
+            }
+            else {
+                (0, core_1.logInfo)(`Pull request is currently a draft and no draft label is configured`);
+            }
+            return;
         }
         const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
         const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
@@ -29,11 +40,11 @@ async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabe
             desiredLabels.add(labelsToApply.approved);
         }
         else if (isRejected) {
-            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.approved} as a review contained CHANGES_REQUESTED`);
+            (0, core_1.logInfo)(`Adding rejected label ${labelsToApply.rejected} as a review contained CHANGES_REQUESTED`);
             desiredLabels.add(labelsToApply.rejected);
         }
         else {
-            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.needsReview} as required reviews not met`);
+            (0, core_1.logInfo)(`Adding needsReview label ${labelsToApply.needsReview} as required reviews not met`);
             desiredLabels.add(labelsToApply.needsReview);
         }
     }
@@ -99,6 +110,7 @@ async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels 
     try {
         if (branchLabels.disable) {
             (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
+            return;
         }
         const prBaseRef = pullRequest.base.ref;
         const prHeadRef = pullRequest.head.ref;
