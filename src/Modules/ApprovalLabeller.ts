@@ -1,13 +1,13 @@
-import { endGroup, GetPullRequestResponse, GitHubClient, logDebug, logError, logInfo, logWarning, startGroup } from "../Core";
+import { EndGroup, GetPullRequestResponse, GitHubClient, LogDebug, LogError, LogInfo, LogWarning, StartGroup } from "../Core";
 import { LabelState } from "../Core/LabelState";
 import { ApprovalLabellerModuleConfig } from "../Config";
 
 export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
-    startGroup('Modules/ApprovalLabeller');
+    StartGroup('Modules/ApprovalLabeller');
 
     try {
         if (!config?.enabled) {
-            logInfo(`Modules/ApprovalLabeller is not enabled. skipping...`);
+            LogInfo(`Modules/ApprovalLabeller is not enabled. skipping...`);
             return;
         }
 
@@ -15,10 +15,10 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
 
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
-                logInfo(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
+                LogInfo(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
                 labelState.Add(labelsToApply.draft);
             } else {
-                logInfo(`Pull request is currently a draft and no draft label is configured`);
+                LogInfo(`Pull request is currently a draft and no draft label is configured`);
             }
 
             return;
@@ -27,9 +27,9 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
         const reviewStatus = await GetReviewStatus(pullRequest);
         const { totalApproved, isApproved, isRejected } = EvaluateReviewStatus(reviewStatus, requiredApprovals);
 
-        logInfo(`Approvals: ${totalApproved}/${requiredApprovals}, IsApproved: ${isApproved}, IsRejected: ${isRejected}`);
+        LogInfo(`Approvals: ${totalApproved}/${requiredApprovals}, IsApproved: ${isApproved}, IsRejected: ${isRejected}`);
 
-        logDebug(`Removing existing approval labels if present`)
+        LogDebug(`Removing existing approval labels if present`)
         labelState.Remove(labelsToApply.approved);
         labelState.Remove(labelsToApply.rejected);
         labelState.Remove(labelsToApply.needsReview);
@@ -38,17 +38,17 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
         }
 
         if (isRejected) {
-            logInfo(`State is rejected adding label ${labelsToApply.rejected}`);
+            LogInfo(`State is rejected adding label ${labelsToApply.rejected}`);
             labelState.Add(labelsToApply.rejected);
         } else if (isApproved) {
-            logInfo(`State is approved adding label ${labelsToApply.approved}`);
+            LogInfo(`State is approved adding label ${labelsToApply.approved}`);
             labelState.Add(labelsToApply.approved);
         } else {
-            logInfo(`State is neither rejected or approved adding label ${labelsToApply.needsReview}`);
+            LogInfo(`State is neither rejected or approved adding label ${labelsToApply.needsReview}`);
             labelState.Add(labelsToApply.needsReview);
         }
     } finally {
-        endGroup();
+        EndGroup();
     }
 }
 
@@ -58,20 +58,20 @@ async function GetReviewStatus(pullRequest: GetPullRequestResponse) {
     const reviewStatus = new Map<string, string>();
     for (const pullRequestReview of pullRequestReviews) {
         if (pullRequestReview.user == null) {
-            logWarning(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
+            LogWarning(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
             continue;
         }
 
         if (pullRequestReview.commit_id !== pullRequest.head.sha) {
-            logDebug(`Ignoring review as it is not for the current commit reference`);
+            LogDebug(`Ignoring review as it is not for the current commit reference`);
             continue;
         }
 
         if (pullRequestReview.state === 'APPROVED' || pullRequestReview.state === 'CHANGES_REQUESTED') {
             reviewStatus.set(pullRequestReview.user.login, pullRequestReview.state);
-            logDebug(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
+            LogDebug(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
         } else {
-            logDebug(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
+            LogDebug(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
         }
     }
 
@@ -81,7 +81,7 @@ async function GetReviewStatus(pullRequest: GetPullRequestResponse) {
 function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredApprovals: number) {
     let totalApproved = 0, isApproved = false, isRejected = false;
     for (const [user, state] of reviewStatuses) {
-        logDebug(`${user} ended in state of ${state}`);
+        LogDebug(`${user} ended in state of ${state}`);
 
         switch (state) {
             case 'CHANGES_REQUESTED':
@@ -105,27 +105,27 @@ function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
     let isValid = true;
 
     if (config.requiredApprovals == 0) {
-        logError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+        LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
         isValid = false;
     }
 
     if (!config.labelsToApply) {
-        logError(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
+        LogError(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
         isValid = false;
     }
 
     if (!config.labelsToApply.approved) {
-        logError(`Config Validation failed modules.approvalLabeller.labelsToApply.approved, must be supplied`);
+        LogError(`Config Validation failed modules.approvalLabeller.labelsToApply.approved, must be supplied`);
         isValid = false;
     }
 
     if (!config.labelsToApply.rejected) {
-        logError(`Config Validation failed modules.approvalLabeller.labelsToApply.rejected, must be supplied`);
+        LogError(`Config Validation failed modules.approvalLabeller.labelsToApply.rejected, must be supplied`);
         isValid = false;
     }
 
     if (!config.labelsToApply.needsReview) {
-        logError(`Config Validation failed modules.approvalLabeller.labelsToApply.needsReview, must be supplied`);
+        LogError(`Config Validation failed modules.approvalLabeller.labelsToApply.needsReview, must be supplied`);
         isValid = false;
     }
 

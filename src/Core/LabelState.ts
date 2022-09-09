@@ -1,4 +1,4 @@
-import { endGroup, GitHubClient, logInfo, startGroup } from ".";
+import { EndGroup, GitHubClient, LogInfo, StartGroup } from ".";
 
 export class LabelState
 {
@@ -35,15 +35,15 @@ export class LabelState
     }
 
     async Apply(pullRequestNumber: number) {
-        startGroup('Core/ApplyLabelState');
+        StartGroup('Core/ApplyLabelState');
 
-        logInfo(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
-        logInfo(`Target State of Labels: ${JSON.stringify(this.labels)}`);
+        LogInfo(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
+        LogInfo(`Target State of Labels: ${JSON.stringify(this.labels)}`);
 
         await GitHubClient.get().SetLabelsOnIssue(pullRequestNumber, this.labels);
 
-        logInfo('Label state has been applied');
+        LogInfo('Label state has been applied');
 
-        endGroup();
+        EndGroup();
     }
 }

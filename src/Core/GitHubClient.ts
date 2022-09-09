@@ -1,6 +1,6 @@
 import { context, getOctokit } from "@actions/github";
 import { components } from '@octokit/openapi-types'
-import { getInput, logDebug } from ".";
+import { GetInput, LogDebug } from ".";
 
 export type Octokit = ReturnType<typeof getOctokit>;
 
@@ -34,7 +34,7 @@ export class GitHubClient {
         ref = ref ?? context.sha;
 
         try {
-            logDebug(`GitHubClient - FetchContent: ${path}, ${ref}`);
+            LogDebug(`GitHubClient - FetchContent: ${path}, ${ref}`);
 
             const response = await this.client.rest.repos.getContent({
                 owner: context.repo.owner,
@@ -57,7 +57,7 @@ export class GitHubClient {
 
     public async CompareCommits(base: string, head: string) {
         try {
-            logDebug(`GitHubClient - CompareCommits: ${base}, ${head}`);
+            LogDebug(`GitHubClient - CompareCommits: ${base}, ${head}`);
 
             const { data } = await this.client.rest.repos.compareCommits({
                 owner: context.repo.owner,
@@ -74,7 +74,7 @@ export class GitHubClient {
 
     public async GetPullRequest(pullNumber: number) {
         try {
-            logDebug(`GitHubClient - GetPullRequest: ${pullNumber}`);
+            LogDebug(`GitHubClient - GetPullRequest: ${pullNumber}`);
 
             const { data } = await this.client.rest.pulls.get({
                 owner: context.repo.owner,
@@ -90,7 +90,7 @@ export class GitHubClient {
 
     public async ListReviewsOnPullRequest(pullNumber: number) {
         try {
-            logDebug(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
+            LogDebug(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
 
             const { data } = await this.client.rest.pulls.listReviews({
                 owner: context.repo.owner,
@@ -106,7 +106,7 @@ export class GitHubClient {
 
     public async RequestReviewersOnPullRequest(pullNumber: number, reviewers: string[]) {
         try {
-            logDebug(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
+            LogDebug(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
 
             const { data } = await this.client.rest.pulls.requestReviewers({
                 owner: context.repo.owner,
@@ -123,7 +123,7 @@ export class GitHubClient {
 
     public async ListLabelsOnIssue(issueNumber: number) {
         try {
-            logDebug(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
+            LogDebug(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
 
             const { data } = await this.client.rest.issues.listLabelsOnIssue({
                 owner: context.repo.owner,
@@ -139,7 +139,7 @@ export class GitHubClient {
 
     public async SetLabelsOnIssue(issueNumber: number, labels: string[]) {
         try {
-            logDebug(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
+            LogDebug(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
 
             const { data } = await this.client.rest.issues.setLabels({
                 owner: context.repo.owner,
@@ -156,7 +156,7 @@ export class GitHubClient {
 
     public async CreateCommentOnIssue(issueNumber: number, body: string) {
         try {
-            logDebug(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
+            LogDebug(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
 
             const { data } = await this.client.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -173,7 +173,7 @@ export class GitHubClient {
 
     public async CreateReactionOnIssueComment(commentId: number, content: '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes') {
         try {
-            logDebug(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
+            LogDebug(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
 
             const { data } = await this.client.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
@@ -190,7 +190,7 @@ export class GitHubClient {
 
     public async ListMembersOfTeam(teamSlug: string) {
         try {
-            logDebug(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
+            LogDebug(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
 
             const { data } = await this.client.rest.teams.listMembersInOrg({
                 org: context.repo.owner,
@@ -204,7 +204,7 @@ export class GitHubClient {
     }
 
     private initializeClient() {
-        const token = getInput('github-token', { required: true });
+        const token = GetInput('github-token', { required: true });
         return getOctokit(token);
     }
 }

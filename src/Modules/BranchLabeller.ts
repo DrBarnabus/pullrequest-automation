@@ -1,13 +1,13 @@
 import { BranchLabellerModuleConfig } from "../Config"
-import { endGroup, GetPullRequestResponse, logDebug, logError, logInfo, startGroup } from "../Core"
+import { EndGroup, GetPullRequestResponse, LogDebug, LogError, LogInfo, StartGroup } from "../Core"
 import { LabelState } from "../Core/LabelState"
 
 export async function ProcessBranchLabeller(config: BranchLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
-    startGroup('Modules/BranchLabeller');
+    StartGroup('Modules/BranchLabeller');
 
     try {
         if (!config?.enabled) {
-            logInfo(`Modules/BranchLabeller is not enabled. skipping...`);
+            LogInfo(`Modules/BranchLabeller is not enabled. skipping...`);
             return;
         }
 
@@ -16,26 +16,26 @@ export async function ProcessBranchLabeller(config: BranchLabellerModuleConfig |
         const prBaseRef = pullRequest.base.ref;
         const prHeadRef = pullRequest.head.ref;
 
-        logInfo(`PrBaseRef: ${prBaseRef}, PrHeadRef: ${prHeadRef}, RulesToProcess: ${rules.length}`);
+        LogInfo(`PrBaseRef: ${prBaseRef}, PrHeadRef: ${prHeadRef}, RulesToProcess: ${rules.length}`);
 
         for (const { baseRef, headRef, labelToApply } of rules) {
             const applies = CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
             if (!applies) {
-                logDebug(`Ignoring branch label ${labelToApply} rules not matched`);
+                LogDebug(`Ignoring branch label ${labelToApply} rules not matched`);
 
                 const removed = labelState.Remove(labelToApply);
                 if (removed) {
-                    logInfo(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
+                    LogInfo(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
                 }
 
                 continue;
             }
 
-            logInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+            LogInfo(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
             labelState.Add(labelToApply);
         }
     } finally {
-        endGroup();
+        EndGroup();
     }
 }
 
@@ -59,7 +59,7 @@ function ValidateAndExtractConfig(config: BranchLabellerModuleConfig) {
     let isValid = true;
 
     if (!config.rules || config.rules.length == 0) {
-        logError(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
+        LogError(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
         isValid = false;
     }
 
@@ -68,17 +68,17 @@ function ValidateAndExtractConfig(config: BranchLabellerModuleConfig) {
         const rule = rules[i];
 
         if (!rule.baseRef) {
-            logError(`Config Validation failed modules.branchLabeller.rules[${i}].baseRef, must be supplied`);
+            LogError(`Config Validation failed modules.branchLabeller.rules[${i}].baseRef, must be supplied`);
             isValid = false;
         }
 
         if (rule.headRef && rule.baseRef == rule.headRef) {
-            logError(`Config Validation failed modules.branchLabeller.rules[${i}].headRef, if supplied must not match baseRef`);
+            LogError(`Config Validation failed modules.branchLabeller.rules[${i}].headRef, if supplied must not match baseRef`);
             isValid = false;
         }
 
         if (!rule.labelToApply) {
-            logError(`Config Validation failed modules.branchLabeller.rules[${i}].labelToApply, must not be supplied`);
+            LogError(`Config Validation failed modules.branchLabeller.rules[${i}].labelToApply, must not be supplied`);
             isValid = false;
         }
     }

@@ -4,7 +4,7 @@ import { ProcessApprovalLabeller } from './Modules/ApprovalLabeller';
 import { ProcessBranchLabeller } from './Modules/BranchLabeller';
 import { CommandConfigs, ModuleConfigs, } from './Config';
 import { LoadConfig } from "./Config";
-import { GitHubClient, logDebug, logError, logInfo, setFailed } from './Core';
+import { GitHubClient, LogDebug, LogInfo, SetFailed } from './Core';
 import { LabelState } from './Core/LabelState';
 import { ProcessMergeSafety } from './Commands/MergeSafety';
 import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
@@ -14,8 +14,8 @@ async function main() {
         const config = await LoadConfig();
 
         const eventName = context.eventName;
-        logDebug(`Workflow triggered by ${eventName}`);
-        logDebug(`Event Payload: ${JSON.stringify(context.payload, null, 2)}`);
+        LogDebug(`Workflow triggered by ${eventName}`);
+        LogDebug(`Event Payload: ${JSON.stringify(context.payload, null, 2)}`);
 
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             if (!config?.modules) {
@@ -33,7 +33,7 @@ async function main() {
             throw new Error('Unable to determine correct action based on triggering event');
         }
     } catch (error: any) {
-        setFailed(error.message);
+        SetFailed(error.message);
     }
 }
 
@@ -44,7 +44,7 @@ async function ProcessModules(config: ModuleConfigs, payload: WebhookPayload) {
     }
 
     const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
-    logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    LogInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
     const existingLabels = await GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
     const labelState = new LabelState(existingLabels.map((l) => l.name));
@@ -55,7 +55,7 @@ async function ProcessModules(config: ModuleConfigs, payload: WebhookPayload) {
 
     await labelState.Apply(pullRequestNumber);
 
-    logInfo('Finished processing');
+    LogInfo('Finished processing');
 }
 
 async function ProcessCommands(config: CommandConfigs, payload: WebhookPayload) {
@@ -69,8 +69,8 @@ async function ProcessCommands(config: CommandConfigs, payload: WebhookPayload) 
 
     const comment = payload.comment;
 
-    logInfo(`Processing comment ${comment.html_url}`);
-    logDebug(`Comment body:\n${comment.body}`);
+    LogInfo(`Processing comment ${comment.html_url}`);
+    LogDebug(`Comment body:\n${comment.body}`);
 
     const pullRequestNumber = payload.issue?.number;
     if (!pullRequestNumber) {
@@ -78,11 +78,11 @@ async function ProcessCommands(config: CommandConfigs, payload: WebhookPayload) 
     }
 
     const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
-    logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    LogInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
     await ProcessMergeSafety(config.mergeSafety, pullRequest, comment);
 
-    logInfo('Finished processing');
+    LogInfo('Finished processing');
 }
 
 main();

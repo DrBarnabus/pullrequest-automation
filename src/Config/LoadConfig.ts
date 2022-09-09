@@ -1,19 +1,19 @@
 import { parse as parseYaml } from 'yaml';
-import { endGroup, getInput, GitHubClient, logInfo, startGroup } from '../Core';
+import { EndGroup, GetInput, GitHubClient, LogInfo, StartGroup } from '../Core';
 import { Config } from './Config';
 
 export async function LoadConfig(): Promise<Config> {
-    startGroup('Core/LoadConfig');
+    StartGroup('Core/LoadConfig');
 
     try {
-        const configPath = getInput('config-path', { required: true });
+        const configPath = GetInput('config-path', { required: true });
 
-        let configRef: string | undefined = getInput('config-ref');
+        let configRef: string | undefined = GetInput('config-ref');
         if (configRef === '') {
             configRef = undefined;
-            logInfo(`Loading config from ${configPath} in current branch`);
+            LogInfo(`Loading config from ${configPath} in current branch`);
         } else {
-            logInfo(`Loading config from ${configPath} in ${configRef}`);
+            LogInfo(`Loading config from ${configPath} in ${configRef}`);
         }
 
         const configFileContents = await GitHubClient.get().FetchContent(configPath, configRef);
@@ -22,10 +22,10 @@ export async function LoadConfig(): Promise<Config> {
         }
 
         const config = parseYaml(configFileContents) as Config;
-        logInfo(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
+        LogInfo(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
 
         return config;
     } finally {
-        endGroup();
+        EndGroup();
     }
 }

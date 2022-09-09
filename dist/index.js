@@ -10,10 +10,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessMergeSafety = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessMergeSafety(config, pullRequest, comment) {
-    (0, Core_1.startGroup)('Commands/MergeSafety');
+    (0, Core_1.StartGroup)('Commands/MergeSafety');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.logInfo)('Commands/MergeSafety is not enabled, skipping...');
+            (0, Core_1.LogInfo)('Commands/MergeSafety is not enabled, skipping...');
             return false;
         }
         const { triggers, branchesToProtect } = ValidateAndExtractConfig(config);
@@ -21,14 +21,14 @@ async function ProcessMergeSafety(config, pullRequest, comment) {
         const prBaseRef = pullRequest.base.ref;
         const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
         if (!triggered) {
-            (0, Core_1.logInfo)(`Commands/MergeSafety has not been triggered`);
+            (0, Core_1.LogInfo)(`Commands/MergeSafety has not been triggered`);
             return false;
         }
         const branchToProtect = MatchBranchToProtect(branchesToProtect, prBaseRef);
         ;
         if (!branchToProtect) {
             await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-            (0, Core_1.logWarning)(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
+            (0, Core_1.LogWarning)(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
             return true;
         }
         const compareResponse = await Core_1.GitHubClient.get().CompareCommits(branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
@@ -43,7 +43,7 @@ async function ProcessMergeSafety(config, pullRequest, comment) {
         return true;
     }
     finally {
-        (0, Core_1.endGroup)();
+        (0, Core_1.EndGroup)();
     }
 }
 exports.ProcessMergeSafety = ProcessMergeSafety;
@@ -82,30 +82,30 @@ function MatchBranchToProtect(branchesToProtect, prBaseRef) {
 function ValidateAndExtractConfig(config) {
     let isValid = true;
     if (!config.triggers) {
-        (0, Core_1.logInfo)(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
+        (0, Core_1.LogInfo)(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
         config.triggers = 'Safe to merge?';
     }
     if (!config.branchesToProtect) {
-        (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
         isValid = false;
     }
     const branchesToProtect = config.branchesToProtect;
     for (let i = 0; i < branchesToProtect.length; i++) {
         const branchToProtect = branchesToProtect[i];
         if (!branchToProtect.baseRef) {
-            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
+            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
             isValid = false;
         }
         if (!branchToProtect.comparisonBaseRef) {
-            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
+            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
             isValid = false;
         }
         if (!branchToProtect.comparisonHeadRef) {
-            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
+            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
             isValid = false;
         }
         if (branchToProtect.comparisonBaseRef === branchToProtect.comparisonHeadRef) {
-            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
+            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
             isValid = false;
         }
     }
@@ -195,27 +195,27 @@ exports.LoadConfig = void 0;
 const yaml_1 = __nccwpck_require__(4083);
 const Core_1 = __nccwpck_require__(5782);
 async function LoadConfig() {
-    (0, Core_1.startGroup)('Core/LoadConfig');
+    (0, Core_1.StartGroup)('Core/LoadConfig');
     try {
-        const configPath = (0, Core_1.getInput)('config-path', { required: true });
-        let configRef = (0, Core_1.getInput)('config-ref');
+        const configPath = (0, Core_1.GetInput)('config-path', { required: true });
+        let configRef = (0, Core_1.GetInput)('config-ref');
         if (configRef === '') {
             configRef = undefined;
-            (0, Core_1.logInfo)(`Loading config from ${configPath} in current branch`);
+            (0, Core_1.LogInfo)(`Loading config from ${configPath} in current branch`);
         }
         else {
-            (0, Core_1.logInfo)(`Loading config from ${configPath} in ${configRef}`);
+            (0, Core_1.LogInfo)(`Loading config from ${configPath} in ${configRef}`);
         }
         const configFileContents = await Core_1.GitHubClient.get().FetchContent(configPath, configRef);
         if (configFileContents === null) {
             throw new Error(`Unable to load config from ${configPath}`);
         }
         const config = (0, yaml_1.parse)(configFileContents);
-        (0, Core_1.logInfo)(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
+        (0, Core_1.LogInfo)(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
         return config;
     }
     finally {
-        (0, Core_1.endGroup)();
+        (0, Core_1.EndGroup)();
     }
 }
 exports.LoadConfig = LoadConfig;
@@ -352,7 +352,7 @@ class GitHubClient {
     async FetchContent(path, ref) {
         ref = ref !== null && ref !== void 0 ? ref : github_1.context.sha;
         try {
-            (0, _1.logDebug)(`GitHubClient - FetchContent: ${path}, ${ref}`);
+            (0, _1.LogDebug)(`GitHubClient - FetchContent: ${path}, ${ref}`);
             const response = await this.client.rest.repos.getContent({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -371,7 +371,7 @@ class GitHubClient {
     }
     async CompareCommits(base, head) {
         try {
-            (0, _1.logDebug)(`GitHubClient - CompareCommits: ${base}, ${head}`);
+            (0, _1.LogDebug)(`GitHubClient - CompareCommits: ${base}, ${head}`);
             const { data } = await this.client.rest.repos.compareCommits({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -386,7 +386,7 @@ class GitHubClient {
     }
     async GetPullRequest(pullNumber) {
         try {
-            (0, _1.logDebug)(`GitHubClient - GetPullRequest: ${pullNumber}`);
+            (0, _1.LogDebug)(`GitHubClient - GetPullRequest: ${pullNumber}`);
             const { data } = await this.client.rest.pulls.get({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -400,7 +400,7 @@ class GitHubClient {
     }
     async ListReviewsOnPullRequest(pullNumber) {
         try {
-            (0, _1.logDebug)(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
+            (0, _1.LogDebug)(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
             const { data } = await this.client.rest.pulls.listReviews({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -414,7 +414,7 @@ class GitHubClient {
     }
     async RequestReviewersOnPullRequest(pullNumber, reviewers) {
         try {
-            (0, _1.logDebug)(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
+            (0, _1.LogDebug)(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
             const { data } = await this.client.rest.pulls.requestReviewers({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -429,7 +429,7 @@ class GitHubClient {
     }
     async ListLabelsOnIssue(issueNumber) {
         try {
-            (0, _1.logDebug)(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
+            (0, _1.LogDebug)(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
             const { data } = await this.client.rest.issues.listLabelsOnIssue({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -443,7 +443,7 @@ class GitHubClient {
     }
     async SetLabelsOnIssue(issueNumber, labels) {
         try {
-            (0, _1.logDebug)(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
+            (0, _1.LogDebug)(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
             const { data } = await this.client.rest.issues.setLabels({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -458,7 +458,7 @@ class GitHubClient {
     }
     async CreateCommentOnIssue(issueNumber, body) {
         try {
-            (0, _1.logDebug)(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
+            (0, _1.LogDebug)(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
             const { data } = await this.client.rest.issues.createComment({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -473,7 +473,7 @@ class GitHubClient {
     }
     async CreateReactionOnIssueComment(commentId, content) {
         try {
-            (0, _1.logDebug)(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
+            (0, _1.LogDebug)(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
             const { data } = await this.client.rest.reactions.createForIssueComment({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
@@ -488,7 +488,7 @@ class GitHubClient {
     }
     async ListMembersOfTeam(teamSlug) {
         try {
-            (0, _1.logDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
+            (0, _1.LogDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
             const { data } = await this.client.rest.teams.listMembersInOrg({
                 org: github_1.context.repo.owner,
                 team_slug: teamSlug
@@ -500,7 +500,7 @@ class GitHubClient {
         }
     }
     initializeClient() {
-        const token = (0, _1.getInput)('github-token', { required: true });
+        const token = (0, _1.GetInput)('github-token', { required: true });
         return (0, github_1.getOctokit)(token);
     }
 }
@@ -547,12 +547,12 @@ class LabelState {
         }
     }
     async Apply(pullRequestNumber) {
-        (0, _1.startGroup)('Core/ApplyLabelState');
-        (0, _1.logInfo)(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
-        (0, _1.logInfo)(`Target State of Labels: ${JSON.stringify(this.labels)}`);
+        (0, _1.StartGroup)('Core/ApplyLabelState');
+        (0, _1.LogInfo)(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
+        (0, _1.LogInfo)(`Target State of Labels: ${JSON.stringify(this.labels)}`);
         await _1.GitHubClient.get().SetLabelsOnIssue(pullRequestNumber, this.labels);
-        (0, _1.logInfo)('Label state has been applied');
-        (0, _1.endGroup)();
+        (0, _1.LogInfo)('Label state has been applied');
+        (0, _1.EndGroup)();
     }
 }
 exports.LabelState = LabelState;
@@ -580,16 +580,16 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
+exports.GetInput = exports.EndGroup = exports.StartGroup = exports.SetFailed = exports.LogError = exports.LogWarning = exports.LogInfo = exports.LogDebug = void 0;
 const core_1 = __nccwpck_require__(2186);
-Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
-Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
-Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
-Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
-Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
-Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
-Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
-Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
+Object.defineProperty(exports, "LogDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
+Object.defineProperty(exports, "LogInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
+Object.defineProperty(exports, "LogWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
+Object.defineProperty(exports, "LogError", ({ enumerable: true, get: function () { return core_1.error; } }));
+Object.defineProperty(exports, "GetInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
+Object.defineProperty(exports, "SetFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
+Object.defineProperty(exports, "StartGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
+Object.defineProperty(exports, "EndGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
 __exportStar(__nccwpck_require__(1004), exports);
 __exportStar(__nccwpck_require__(6207), exports);
 
@@ -605,27 +605,27 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessApprovalLabeller = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessApprovalLabeller(config, pullRequest, labelState) {
-    (0, Core_1.startGroup)('Modules/ApprovalLabeller');
+    (0, Core_1.StartGroup)('Modules/ApprovalLabeller');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.logInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
+            (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
             return;
         }
         const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
-                (0, Core_1.logInfo)(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
+                (0, Core_1.LogInfo)(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
                 labelState.Add(labelsToApply.draft);
             }
             else {
-                (0, Core_1.logInfo)(`Pull request is currently a draft and no draft label is configured`);
+                (0, Core_1.LogInfo)(`Pull request is currently a draft and no draft label is configured`);
             }
             return;
         }
         const reviewStatus = await GetReviewStatus(pullRequest);
         const { totalApproved, isApproved, isRejected } = EvaluateReviewStatus(reviewStatus, requiredApprovals);
-        (0, Core_1.logInfo)(`Approvals: ${totalApproved}/${requiredApprovals}, IsApproved: ${isApproved}, IsRejected: ${isRejected}`);
-        (0, Core_1.logDebug)(`Removing existing approval labels if present`);
+        (0, Core_1.LogInfo)(`Approvals: ${totalApproved}/${requiredApprovals}, IsApproved: ${isApproved}, IsRejected: ${isRejected}`);
+        (0, Core_1.LogDebug)(`Removing existing approval labels if present`);
         labelState.Remove(labelsToApply.approved);
         labelState.Remove(labelsToApply.rejected);
         labelState.Remove(labelsToApply.needsReview);
@@ -633,20 +633,20 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             labelState.Remove(labelsToApply.draft);
         }
         if (isRejected) {
-            (0, Core_1.logInfo)(`State is rejected adding label ${labelsToApply.rejected}`);
+            (0, Core_1.LogInfo)(`State is rejected adding label ${labelsToApply.rejected}`);
             labelState.Add(labelsToApply.rejected);
         }
         else if (isApproved) {
-            (0, Core_1.logInfo)(`State is approved adding label ${labelsToApply.approved}`);
+            (0, Core_1.LogInfo)(`State is approved adding label ${labelsToApply.approved}`);
             labelState.Add(labelsToApply.approved);
         }
         else {
-            (0, Core_1.logInfo)(`State is neither rejected or approved adding label ${labelsToApply.needsReview}`);
+            (0, Core_1.LogInfo)(`State is neither rejected or approved adding label ${labelsToApply.needsReview}`);
             labelState.Add(labelsToApply.needsReview);
         }
     }
     finally {
-        (0, Core_1.endGroup)();
+        (0, Core_1.EndGroup)();
     }
 }
 exports.ProcessApprovalLabeller = ProcessApprovalLabeller;
@@ -655,19 +655,19 @@ async function GetReviewStatus(pullRequest) {
     const reviewStatus = new Map();
     for (const pullRequestReview of pullRequestReviews) {
         if (pullRequestReview.user == null) {
-            (0, Core_1.logWarning)(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
+            (0, Core_1.LogWarning)(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
             continue;
         }
         if (pullRequestReview.commit_id !== pullRequest.head.sha) {
-            (0, Core_1.logDebug)(`Ignoring review as it is not for the current commit reference`);
+            (0, Core_1.LogDebug)(`Ignoring review as it is not for the current commit reference`);
             continue;
         }
         if (pullRequestReview.state === 'APPROVED' || pullRequestReview.state === 'CHANGES_REQUESTED') {
             reviewStatus.set(pullRequestReview.user.login, pullRequestReview.state);
-            (0, Core_1.logDebug)(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
+            (0, Core_1.LogDebug)(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
         }
         else {
-            (0, Core_1.logDebug)(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
+            (0, Core_1.LogDebug)(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
         }
     }
     return reviewStatus;
@@ -675,7 +675,7 @@ async function GetReviewStatus(pullRequest) {
 function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
     let totalApproved = 0, isApproved = false, isRejected = false;
     for (const [user, state] of reviewStatuses) {
-        (0, Core_1.logDebug)(`${user} ended in state of ${state}`);
+        (0, Core_1.LogDebug)(`${user} ended in state of ${state}`);
         switch (state) {
             case 'CHANGES_REQUESTED':
                 isRejected = true;
@@ -694,23 +694,23 @@ function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
 function ValidateAndExtractConfig(config) {
     let isValid = true;
     if (config.requiredApprovals == 0) {
-        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
         isValid = false;
     }
     if (!config.labelsToApply) {
-        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
         isValid = false;
     }
     if (!config.labelsToApply.approved) {
-        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.approved, must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply.approved, must be supplied`);
         isValid = false;
     }
     if (!config.labelsToApply.rejected) {
-        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.rejected, must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply.rejected, must be supplied`);
         isValid = false;
     }
     if (!config.labelsToApply.needsReview) {
-        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.needsReview, must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply.needsReview, must be supplied`);
         isValid = false;
     }
     if (!isValid) {
@@ -731,32 +731,32 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessBranchLabeller = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessBranchLabeller(config, pullRequest, labelState) {
-    (0, Core_1.startGroup)('Modules/BranchLabeller');
+    (0, Core_1.StartGroup)('Modules/BranchLabeller');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.logInfo)(`Modules/BranchLabeller is not enabled. skipping...`);
+            (0, Core_1.LogInfo)(`Modules/BranchLabeller is not enabled. skipping...`);
             return;
         }
         const { rules } = ValidateAndExtractConfig(config);
         const prBaseRef = pullRequest.base.ref;
         const prHeadRef = pullRequest.head.ref;
-        (0, Core_1.logInfo)(`PrBaseRef: ${prBaseRef}, PrHeadRef: ${prHeadRef}, RulesToProcess: ${rules.length}`);
+        (0, Core_1.LogInfo)(`PrBaseRef: ${prBaseRef}, PrHeadRef: ${prHeadRef}, RulesToProcess: ${rules.length}`);
         for (const { baseRef, headRef, labelToApply } of rules) {
             const applies = CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
             if (!applies) {
-                (0, Core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
+                (0, Core_1.LogDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
                 const removed = labelState.Remove(labelToApply);
                 if (removed) {
-                    (0, Core_1.logInfo)(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
+                    (0, Core_1.LogInfo)(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
                 }
                 continue;
             }
-            (0, Core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+            (0, Core_1.LogInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
             labelState.Add(labelToApply);
         }
     }
     finally {
-        (0, Core_1.endGroup)();
+        (0, Core_1.EndGroup)();
     }
 }
 exports.ProcessBranchLabeller = ProcessBranchLabeller;
@@ -776,22 +776,22 @@ function CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
 function ValidateAndExtractConfig(config) {
     let isValid = true;
     if (!config.rules || config.rules.length == 0) {
-        (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
+        (0, Core_1.LogError)(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
         isValid = false;
     }
     const rules = config.rules;
     for (let i = 0; i < rules.length; i++) {
         const rule = rules[i];
         if (!rule.baseRef) {
-            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].baseRef, must be supplied`);
+            (0, Core_1.LogError)(`Config Validation failed modules.branchLabeller.rules[${i}].baseRef, must be supplied`);
             isValid = false;
         }
         if (rule.headRef && rule.baseRef == rule.headRef) {
-            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].headRef, if supplied must not match baseRef`);
+            (0, Core_1.LogError)(`Config Validation failed modules.branchLabeller.rules[${i}].headRef, if supplied must not match baseRef`);
             isValid = false;
         }
         if (!rule.labelToApply) {
-            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].labelToApply, must not be supplied`);
+            (0, Core_1.LogError)(`Config Validation failed modules.branchLabeller.rules[${i}].labelToApply, must not be supplied`);
             isValid = false;
         }
     }
@@ -814,18 +814,18 @@ exports.ProcessReviewerExpander = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessReviewerExpander(config, pullRequest) {
     var _a;
-    (0, Core_1.startGroup)('Modules/ReviewerExpander');
+    (0, Core_1.StartGroup)('Modules/ReviewerExpander');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.logInfo)(`Modules/ReviewerExpander is not enabled. skipping...`);
+            (0, Core_1.LogInfo)(`Modules/ReviewerExpander is not enabled. skipping...`);
             return;
         }
         if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
-            (0, Core_1.logInfo)(`Nothing to expand as no requested_teams on the pull request`);
+            (0, Core_1.LogInfo)(`Nothing to expand as no requested_teams on the pull request`);
             return;
         }
         if (pullRequest.requested_teams.length > 1) {
-            (0, Core_1.logWarning)(`More than one team requested for review which is not currently supported`);
+            (0, Core_1.LogWarning)(`More than one team requested for review which is not currently supported`);
             return;
         }
         const requestedTeam = pullRequest.requested_teams[0];
@@ -838,16 +838,16 @@ async function ProcessReviewerExpander(config, pullRequest) {
             }
         }
         if (reviewersToRequest.length > 0) {
-            (0, Core_1.logInfo)(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
+            (0, Core_1.LogInfo)(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
             await Core_1.GitHubClient.get().RequestReviewersOnPullRequest(pullRequest.number, reviewersToRequest);
         }
     }
     catch (err) {
-        (0, Core_1.logError)(`An error ocurred while processing reviewer expander: ${err}`);
+        (0, Core_1.LogError)(`An error ocurred while processing reviewer expander: ${err}`);
         throw err;
     }
     finally {
-        (0, Core_1.endGroup)();
+        (0, Core_1.EndGroup)();
     }
 }
 exports.ProcessReviewerExpander = ProcessReviewerExpander;
@@ -18827,8 +18827,8 @@ async function main() {
     try {
         const config = await (0, Config_1.LoadConfig)();
         const eventName = github_1.context.eventName;
-        (0, Core_1.logDebug)(`Workflow triggered by ${eventName}`);
-        (0, Core_1.logDebug)(`Event Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
+        (0, Core_1.LogDebug)(`Workflow triggered by ${eventName}`);
+        (0, Core_1.LogDebug)(`Event Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             if (!(config === null || config === void 0 ? void 0 : config.modules)) {
                 throw new Error(`Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
@@ -18846,7 +18846,7 @@ async function main() {
         }
     }
     catch (error) {
-        (0, Core_1.setFailed)(error.message);
+        (0, Core_1.SetFailed)(error.message);
     }
 }
 async function ProcessModules(config, payload) {
@@ -18856,14 +18856,14 @@ async function ProcessModules(config, payload) {
         throw new Error('Unable to determine pull request number from context');
     }
     const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
-    (0, Core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    (0, Core_1.LogInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     const existingLabels = await Core_1.GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
     const labelState = new LabelState_1.LabelState(existingLabels.map((l) => l.name));
     await (0, ApprovalLabeller_1.ProcessApprovalLabeller)(config.approvalLabeller, pullRequest, labelState);
     await (0, BranchLabeller_1.ProcessBranchLabeller)(config.branchLabeller, pullRequest, labelState);
     await (0, ReviewerExpander_1.ProcessReviewerExpander)(config.reviewerExpander, pullRequest);
     await labelState.Apply(pullRequestNumber);
-    (0, Core_1.logInfo)('Finished processing');
+    (0, Core_1.LogInfo)('Finished processing');
 }
 async function ProcessCommands(config, payload) {
     var _a, _b;
@@ -18874,16 +18874,16 @@ async function ProcessCommands(config, payload) {
         throw new Error(`Unable to extract issue.pull_request from context payload`);
     }
     const comment = payload.comment;
-    (0, Core_1.logInfo)(`Processing comment ${comment.html_url}`);
-    (0, Core_1.logDebug)(`Comment body:\n${comment.body}`);
+    (0, Core_1.LogInfo)(`Processing comment ${comment.html_url}`);
+    (0, Core_1.LogDebug)(`Comment body:\n${comment.body}`);
     const pullRequestNumber = (_b = payload.issue) === null || _b === void 0 ? void 0 : _b.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
     const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
-    (0, Core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    (0, Core_1.LogInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     await (0, MergeSafety_1.ProcessMergeSafety)(config.mergeSafety, pullRequest, comment);
-    (0, Core_1.logInfo)('Finished processing');
+    (0, Core_1.LogInfo)('Finished processing');
 }
 main();
 

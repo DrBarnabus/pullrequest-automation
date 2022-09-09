@@ -1,22 +1,22 @@
 import { ReviewerExpanderModuleConfig } from "../Config";
-import { endGroup, GetPullRequestResponse, GitHubClient, logError, logInfo, logWarning, startGroup } from "../Core"
+import { EndGroup, GetPullRequestResponse, GitHubClient, LogError, LogInfo, LogWarning, StartGroup } from "../Core"
 
 export async function ProcessReviewerExpander(config: ReviewerExpanderModuleConfig | undefined, pullRequest: GetPullRequestResponse) {
-    startGroup('Modules/ReviewerExpander');
+    StartGroup('Modules/ReviewerExpander');
 
     try {
         if (!config?.enabled) {
-            logInfo(`Modules/ReviewerExpander is not enabled. skipping...`);
+            LogInfo(`Modules/ReviewerExpander is not enabled. skipping...`);
             return;
         }
 
         if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
-            logInfo(`Nothing to expand as no requested_teams on the pull request`);
+            LogInfo(`Nothing to expand as no requested_teams on the pull request`);
             return;
         }
 
         if (pullRequest.requested_teams.length > 1) {
-            logWarning(`More than one team requested for review which is not currently supported`);
+            LogWarning(`More than one team requested for review which is not currently supported`);
             return;
         }
 
@@ -32,13 +32,13 @@ export async function ProcessReviewerExpander(config: ReviewerExpanderModuleConf
         }
 
         if (reviewersToRequest.length > 0) {
-            logInfo(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
+            LogInfo(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
             await GitHubClient.get().RequestReviewersOnPullRequest(pullRequest.number, reviewersToRequest);
         }
     } catch (err) {
-        logError(`An error ocurred while processing reviewer expander: ${err}`);
+        LogError(`An error ocurred while processing reviewer expander: ${err}`);
         throw err;
     } finally {
-        endGroup();
+        EndGroup();
     }
 }

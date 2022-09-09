@@ -1,13 +1,13 @@
 import { MergeSafetyCommandConfig } from "../Config";
 import { BranchToProtect } from '../Config/Commands/MergeSafety/BranchToProtect';
-import { endGroup, logError, logInfo, logWarning, startGroup, GitHubClient, CompareCommitsResponse, GetPullRequestResponse } from "../Core";
+import { EndGroup, LogError, LogInfo, LogWarning, SetFailed, GitHubClient, CompareCommitsResponse, GetPullRequestResponse, StartGroup } from "../Core";
 
 export async function ProcessMergeSafety(config: MergeSafetyCommandConfig | undefined, pullRequest: GetPullRequestResponse, comment: any) {
-    startGroup('Commands/MergeSafety');
+    StartGroup('Commands/MergeSafety');
 
     try {
         if (!config?.enabled) {
-            logInfo('Commands/MergeSafety is not enabled, skipping...');
+            LogInfo('Commands/MergeSafety is not enabled, skipping...');
             return false;
         }
 
@@ -18,7 +18,7 @@ export async function ProcessMergeSafety(config: MergeSafetyCommandConfig | unde
 
         const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
         if (!triggered) {
-            logInfo(`Commands/MergeSafety has not been triggered`);
+            LogInfo(`Commands/MergeSafety has not been triggered`);
             return false;
         }
 
@@ -26,7 +26,7 @@ export async function ProcessMergeSafety(config: MergeSafetyCommandConfig | unde
         if (!branchToProtect) {
             await GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
 
-            logWarning(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
+            LogWarning(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
             return true;
         }
 
@@ -42,7 +42,7 @@ export async function ProcessMergeSafety(config: MergeSafetyCommandConfig | unde
 
         return true;
     } finally {
-        endGroup();
+        EndGroup();
     }
 }
 
@@ -89,12 +89,12 @@ function ValidateAndExtractConfig(config: MergeSafetyCommandConfig) {
     let isValid = true;
 
     if (!config.triggers) {
-        logInfo(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
+        LogInfo(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
         config.triggers = 'Safe to merge?';
     }
 
     if (!config.branchesToProtect) {
-        logError(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
+        LogError(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
         isValid = false;
     }
 
@@ -103,22 +103,22 @@ function ValidateAndExtractConfig(config: MergeSafetyCommandConfig) {
         const branchToProtect = branchesToProtect[i];
 
         if (!branchToProtect.baseRef) {
-            logError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
+            LogError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
             isValid = false;
         }
 
         if (!branchToProtect.comparisonBaseRef) {
-            logError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
+            LogError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
             isValid = false;
         }
 
         if (!branchToProtect.comparisonHeadRef) {
-            logError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
+            LogError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
             isValid = false;
         }
 
         if (branchToProtect.comparisonBaseRef === branchToProtect.comparisonHeadRef) {
-            logError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
+            LogError(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
             isValid = false;
         }
     }

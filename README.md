@@ -68,6 +68,10 @@ __github-token__ - The GitHub API Token, for example `${{ secrets.GITHUB_TOKEN }
 __config-path__ - Optional override for the path to the config file. Defaults to `.github/pullrequest-automation.yml`
 __config-ref__ - Optional override for the branch/tag/commit to load the config from. Recommended to set to `main` but defaults to the commit in the PR if not set.
 
+### Label Sync
+
+It's strongly recommended especially if configuring for multiple repos to make use of [label-sync](https://github.com/DrBarnabus/label-sync) to quickly and easily create/manage labels via a configuration file in the repo.
+
 ## v3 Breaking Changes
 
 See [v3-CHANGES](./v3-CHANGES.md)

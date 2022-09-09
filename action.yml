@@ -1,21 +1,21 @@
-name: 'Pull Request Automation'
-description: 'Automation for common Pull Request tasks on GitHub.'
-author: 'DrBarnabus'
+name: Pull Request Automation
+description: Automation for common Pull Request tasks on GitHub.
+author: DrBarnabus
 inputs:
   github-token:
-    description: 'The secrets.GITHUB_TOKEN for the repo or a valid personal access token with access to the repo'
+    description: The secrets.GITHUB_TOKEN for the repo or a valid personal access token with access to the repo
     required: true
   config-path:
-    description: 'The path to the config file'
-    default: '.github/pullrequest-automation.yml'
+    description: The path to the config file
+    default: .github/pullrequest-automation.yml
     required: false
   config-ref:
-    description: 'The branch/tag/commit to load the config from. Defaults to the current branch if not specified.'
+    description: The branch/tag/commit to load the config from. Defaults to the current branch if not specified.
     required: false
 
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: node16
+  main: dist/index.js
 
 branding:
   color: purple
