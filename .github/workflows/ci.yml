@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, release/v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Node 16
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16.x
+    - name: Output npm cache Directory Path
+      id: npm-cache
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+    - name: Restore npm cache Directory
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.npm-cache.outputs.dir }}
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - run: npm ci
+    - run: npm build
