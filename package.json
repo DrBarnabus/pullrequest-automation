@@ -4,7 +4,8 @@
   "description": "A GitHub Action to automate a number of common pull request tasks in a GitHub Repository.",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc && ncc build lib/main.js",
+    "prebuild": "rm -rf dist && rm -rf lib",
+    "build": "npm run prebuild && tsc && ncc build lib/main.js",
     "prepare": "husky install"
   },
   "repository": {

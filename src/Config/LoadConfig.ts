@@ -1,6 +1,6 @@
-import { parse as parseYaml } from "yaml";
-import { endGroup, getInput, logInfo, startGroup, GitHubClient } from "../Core";
-import { Config } from "./Config";
+import { parse as parseYaml } from 'yaml';
+import { endGroup, getInput, GitHubClient, logInfo, startGroup } from '../Core';
+import { Config } from './Config';
 
 export async function LoadConfig(): Promise<Config> {
     startGroup('Core/LoadConfig');

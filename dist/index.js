@@ -8,7 +8,7 @@
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessMergeSafety = void 0;
-const Core_1 = __nccwpck_require__(8038);
+const Core_1 = __nccwpck_require__(5782);
 async function ProcessMergeSafety(config, pullRequest, comment) {
     (0, Core_1.startGroup)('Commands/MergeSafety');
     try {
@@ -118,7 +118,37 @@ function ValidateAndExtractConfig(config) {
 
 /***/ }),
 
-/***/ 3295:
+/***/ 1211:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 7763:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 2116:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 970:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -138,56 +168,343 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.loadConfig = void 0;
-const core_1 = __nccwpck_require__(2298);
-const yaml_1 = __nccwpck_require__(4083);
-const github_client_1 = __nccwpck_require__(4072);
-async function loadConfig(client) {
-    (0, core_1.startGroup)('Load Config');
-    try {
-        const configPath = (0, core_1.getInput)('config-path', { required: true });
-        let configRef = (0, core_1.getInput)('config-ref');
-        if (configRef === '') {
-            configRef = undefined;
-            (0, core_1.logInfo)(`Loading config from ${configPath} in current branch`);
-        }
-        else {
-            (0, core_1.logInfo)(`Loading config from ${configPath} in ${configRef}`);
-        }
-        const configFileContents = await (0, github_client_1.fetchContent)(client, configPath, configRef);
-        if (configFileContents === null) {
-            throw new Error(`Unable to load config from ${configPath}`);
-        }
-        const config = (0, yaml_1.parse)(configFileContents);
-        (0, core_1.logInfo)(`Loaded config from ${configPath}\n${JSON.stringify(config)}`);
-        return config;
-    }
-    finally {
-        (0, core_1.endGroup)();
-    }
-}
-exports.loadConfig = loadConfig;
-__exportStar(__nccwpck_require__(1583), exports);
+__exportStar(__nccwpck_require__(1211), exports);
+__exportStar(__nccwpck_require__(7763), exports);
+__exportStar(__nccwpck_require__(2116), exports);
 
 
 /***/ }),
 
-/***/ 8038:
+/***/ 7949:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 8795:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
-const core_1 = __nccwpck_require__(2186);
-Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
-Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
-Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
-Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
-Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
-Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
-Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
-Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
+exports.LoadConfig = void 0;
+const yaml_1 = __nccwpck_require__(4083);
+const Core_1 = __nccwpck_require__(5782);
+async function LoadConfig() {
+    (0, Core_1.startGroup)('Core/LoadConfig');
+    try {
+        const configPath = (0, Core_1.getInput)('config-path', { required: true });
+        let configRef = (0, Core_1.getInput)('config-ref');
+        if (configRef === '') {
+            configRef = undefined;
+            (0, Core_1.logInfo)(`Loading config from ${configPath} in current branch`);
+        }
+        else {
+            (0, Core_1.logInfo)(`Loading config from ${configPath} in ${configRef}`);
+        }
+        const configFileContents = await Core_1.GitHubClient.get().FetchContent(configPath, configRef);
+        if (configFileContents === null) {
+            throw new Error(`Unable to load config from ${configPath}`);
+        }
+        const config = (0, yaml_1.parse)(configFileContents);
+        (0, Core_1.logInfo)(`Loaded config from ${configPath}\n${JSON.stringify(config)}`);
+        return config;
+    }
+    finally {
+        (0, Core_1.endGroup)();
+    }
+}
+exports.LoadConfig = LoadConfig;
+
+
+/***/ }),
+
+/***/ 4619:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 1368:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 1780:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 7279:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 196:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 3101:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(1368), exports);
+__exportStar(__nccwpck_require__(7279), exports);
+__exportStar(__nccwpck_require__(4619), exports);
+__exportStar(__nccwpck_require__(1780), exports);
+__exportStar(__nccwpck_require__(196), exports);
+
+
+/***/ }),
+
+/***/ 6358:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(7949), exports);
+__exportStar(__nccwpck_require__(8795), exports);
+__exportStar(__nccwpck_require__(970), exports);
+__exportStar(__nccwpck_require__(3101), exports);
+
+
+/***/ }),
+
+/***/ 1004:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GitHubClient = void 0;
+const github_1 = __nccwpck_require__(5438);
+const _1 = __nccwpck_require__(5782);
+class GitHubClient {
+    constructor() {
+        this.client = this.initializeClient();
+    }
+    static get() {
+        if (!GitHubClient.instance) {
+            GitHubClient.instance = new GitHubClient();
+        }
+        return GitHubClient.instance;
+    }
+    async FetchContent(path, ref) {
+        ref = ref !== null && ref !== void 0 ? ref : github_1.context.sha;
+        try {
+            (0, _1.logDebug)(`GitHubClient - FetchContent: ${path}, ${ref}`);
+            const response = await this.client.rest.repos.getContent({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                path: path,
+                ref: ref
+            });
+            if (Array.isArray(response.data)) {
+                throw new Error('response contained a directory not a file');
+            }
+            const data = response.data;
+            return Buffer.from(data.content, data.encoding).toString();
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to fetch content\n${error}`);
+        }
+    }
+    async CompareCommits(base, head) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - CompareCommits: ${base}, ${head}`);
+            const { data } = await this.client.rest.repos.compareCommits({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                base,
+                head
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to compare commits\n${error}`);
+        }
+    }
+    async GetPullRequest(pullNumber) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - GetPullRequest: ${pullNumber}`);
+            const { data } = await this.client.rest.pulls.get({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: pullNumber
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to get pull request\n${error}`);
+        }
+    }
+    async ListReviewsOnPullRequest(pullNumber) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
+            const { data } = await this.client.rest.pulls.listReviews({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: pullNumber
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to list reviews pull request\n${error}`);
+        }
+    }
+    async RequestReviewersOnPullRequest(pullNumber, reviewers) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
+            const { data } = await this.client.rest.pulls.requestReviewers({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: pullNumber,
+                reviewers
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to request reviewers pull request\n${error}`);
+        }
+    }
+    async ListLabelsOnIssue(issueNumber) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
+            const { data } = await this.client.rest.issues.listLabelsOnIssue({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to list labels on issue\n${error}`);
+        }
+    }
+    async SetLabelsOnIssue(issueNumber, labels) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
+            const { data } = await this.client.rest.issues.setLabels({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber,
+                labels
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to set labels on issue\n${error}`);
+        }
+    }
+    async CreateCommentOnIssue(issueNumber, body) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
+            const { data } = await this.client.rest.issues.createComment({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber,
+                body
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to create comment on issue\n${error}`);
+        }
+    }
+    async CreateReactionOnIssueComment(commentId, content) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
+            const { data } = await this.client.rest.reactions.createForIssueComment({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                comment_id: commentId,
+                content
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to create reaction for issue comment\n${error}`);
+        }
+    }
+    async ListMembersOfTeam(teamSlug) {
+        try {
+            (0, _1.logDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
+            const { data } = await this.client.rest.teams.listMembersInOrg({
+                org: github_1.context.repo.owner,
+                team_slug: teamSlug
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to list members of team\n${error}`);
+        }
+    }
+    initializeClient() {
+        const token = (0, _1.getInput)('github-token', { required: true });
+        return (0, github_1.getOctokit)(token);
+    }
+}
+exports.GitHubClient = GitHubClient;
 
 
 /***/ }),
@@ -199,7 +516,7 @@ Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function ()
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LabelState = void 0;
-const _1 = __nccwpck_require__(8038);
+const _1 = __nccwpck_require__(5782);
 class LabelState {
     constructor(existingLabels) {
         this.existingLabels = existingLabels;
@@ -243,6 +560,42 @@ exports.LabelState = LabelState;
 
 /***/ }),
 
+/***/ 5782:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
+const core_1 = __nccwpck_require__(2186);
+Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
+Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
+Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
+Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
+Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
+Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
+Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
+Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
+__exportStar(__nccwpck_require__(1004), exports);
+__exportStar(__nccwpck_require__(6207), exports);
+
+
+/***/ }),
+
 /***/ 3337:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -250,7 +603,7 @@ exports.LabelState = LabelState;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessApprovalLabeller = void 0;
-const Core_1 = __nccwpck_require__(8038);
+const Core_1 = __nccwpck_require__(5782);
 async function ProcessApprovalLabeller(config, pullRequest, labelState) {
     (0, Core_1.startGroup)('Modules/ApprovalLabeller');
     try {
@@ -376,7 +729,7 @@ function ValidateAndExtractConfig(config) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessBranchLabeller = void 0;
-const Core_1 = __nccwpck_require__(8038);
+const Core_1 = __nccwpck_require__(5782);
 async function ProcessBranchLabeller(config, pullRequest, labelState) {
     (0, Core_1.startGroup)('Modules/BranchLabeller');
     try {
@@ -458,7 +811,7 @@ function ValidateAndExtractConfig(config) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessReviewerExpander = void 0;
-const Core_1 = __nccwpck_require__(8038);
+const Core_1 = __nccwpck_require__(5782);
 async function ProcessReviewerExpander(config, pullRequest) {
     var _a;
     (0, Core_1.startGroup)('Modules/ReviewerExpander');
@@ -498,213 +851,6 @@ async function ProcessReviewerExpander(config, pullRequest) {
     }
 }
 exports.ProcessReviewerExpander = ProcessReviewerExpander;
-
-
-/***/ }),
-
-/***/ 2298:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
-const core_1 = __nccwpck_require__(2186);
-Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
-Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
-Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
-Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
-Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
-Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
-Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
-Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
-
-
-/***/ }),
-
-/***/ 4072:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.listMembersOfTeam = exports.createReactionForIssueComment = exports.createCommentOnIssue = exports.setLabelsOnIssue = exports.listLabelsOnIssue = exports.requestReviewersOnPullRequest = exports.listReviewsOnPullRequest = exports.getPullRequest = exports.compareCommits = exports.fetchContent = exports.getGitHubClient = void 0;
-const github_1 = __nccwpck_require__(5438);
-const core_1 = __nccwpck_require__(2298);
-function getGitHubClient() {
-    const token = (0, core_1.getInput)('github-token', { required: true });
-    return (0, github_1.getOctokit)(token);
-}
-exports.getGitHubClient = getGitHubClient;
-async function fetchContent(gitHubClient, path, ref) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient repos.getContent: ${path}, ${ref !== null && ref !== void 0 ? ref : github_1.context.sha}`);
-        const response = await gitHubClient.rest.repos.getContent({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            path: path,
-            ref: ref !== null && ref !== void 0 ? ref : github_1.context.sha
-        });
-        if (Array.isArray(response.data)) {
-            throw new Error('Expected file not directory');
-        }
-        const data = response.data;
-        return Buffer.from(data.content, data.encoding).toString();
-    }
-    catch (error) {
-        throw new Error(`Unable to load content from Path ${path}\n${error}`);
-    }
-}
-exports.fetchContent = fetchContent;
-async function compareCommits(gitHubClient, base, head) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient repos.compare: ${base}...${head}`);
-        const { data } = await gitHubClient.rest.repos.compareCommits({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            base,
-            head
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to compare base ${base} with head ${head}\n${error}`);
-    }
-}
-exports.compareCommits = compareCommits;
-async function getPullRequest(gitHubClient, pullNumber) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient pulls.get: ${pullNumber}`);
-        const { data } = await gitHubClient.rest.pulls.get({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            pull_number: pullNumber
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to load pull request with PullNumber ${pullNumber}\n${error}`);
-    }
-}
-exports.getPullRequest = getPullRequest;
-async function listReviewsOnPullRequest(gitHubClient, pullNumber) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient pulls.listReviews: ${pullNumber}`);
-        const { data } = await gitHubClient.rest.pulls.listReviews({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            pull_number: pullNumber
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to retrieve reviews from pull request with PullNumber ${pullNumber}\n${error}`);
-    }
-}
-exports.listReviewsOnPullRequest = listReviewsOnPullRequest;
-async function requestReviewersOnPullRequest(gitHubClient, pullNumber, reviewers) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient pulls.requestReviewers: ${pullNumber}, ${JSON.stringify(reviewers)}`);
-        const { data } = await gitHubClient.rest.pulls.requestReviewers({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            pull_number: pullNumber,
-            reviewers
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to request reviewers on pull request with PullNumber ${pullNumber}\n${error}`);
-    }
-}
-exports.requestReviewersOnPullRequest = requestReviewersOnPullRequest;
-async function listLabelsOnIssue(gitHubClient, issueNumber) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient issues.listLabelsOnIssue: ${issueNumber}`);
-        const { data } = await gitHubClient.rest.issues.listLabelsOnIssue({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            issue_number: issueNumber
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to retrieve labels from Issue ${issueNumber}\n${error}`);
-    }
-}
-exports.listLabelsOnIssue = listLabelsOnIssue;
-async function setLabelsOnIssue(gitHubClient, issueNumber, labels) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient issues.setLabels: ${issueNumber}, ${JSON.stringify(labels)}`);
-        const { data } = await gitHubClient.rest.issues.setLabels({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            issue_number: issueNumber,
-            labels
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to set labels on Issue ${issueNumber}\n${error}`);
-    }
-}
-exports.setLabelsOnIssue = setLabelsOnIssue;
-async function createCommentOnIssue(gitHubClient, issueNumber, body) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient issues.createComment: ${issueNumber}, ${body}`);
-        const { data } = await gitHubClient.rest.issues.createComment({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            issue_number: issueNumber,
-            body
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to set labels on Issue ${issueNumber}\n${error}`);
-    }
-}
-exports.createCommentOnIssue = createCommentOnIssue;
-async function createReactionForIssueComment(gitHubClient, commentId, content) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient reactions.createForIssueComment: ${commentId}, ${content}`);
-        const { data } = await gitHubClient.rest.reactions.createForIssueComment({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            comment_id: commentId,
-            content
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to create reaction on issue comment ${commentId}\n${error}`);
-    }
-}
-exports.createReactionForIssueComment = createReactionForIssueComment;
-async function listMembersOfTeam(gitHubClient, teamSlug) {
-    try {
-        (0, core_1.logDebug)(`GitHubClient teams.listMembersInOrg: ${teamSlug}`);
-        const { data } = await gitHubClient.rest.teams.listMembersInOrg({
-            org: github_1.context.repo.owner,
-            team_slug: teamSlug
-        });
-        return data;
-    }
-    catch (error) {
-        throw new Error(`Unable to get members in team ${teamSlug}\n${error}`);
-    }
-}
-exports.listMembersOfTeam = listMembersOfTeam;
-
-
-/***/ }),
-
-/***/ 1583:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -18671,8 +18817,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const github_1 = __nccwpck_require__(5438);
 const ApprovalLabeller_1 = __nccwpck_require__(3337);
 const BranchLabeller_1 = __nccwpck_require__(5497);
-const Config_1 = __nccwpck_require__(3295);
-const Core_1 = __nccwpck_require__(8038);
+const Config_1 = __nccwpck_require__(6358);
+const Core_1 = __nccwpck_require__(5782);
 const LabelState_1 = __nccwpck_require__(6207);
 const MergeSafety_1 = __nccwpck_require__(2978);
 const ReviewerExpander_1 = __nccwpck_require__(6932);

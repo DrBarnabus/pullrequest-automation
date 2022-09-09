@@ -1,5 +1,5 @@
 export * from './Config';
-export * from './loadConfig';
+export * from './LoadConfig';
 
 export * from './Commands';
 export * from './Modules';
