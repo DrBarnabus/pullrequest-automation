@@ -774,7 +774,7 @@ function CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
     return true;
 }
 function ValidateAndExtractConfig(config) {
-    let isValid = false;
+    let isValid = true;
     if (!config.rules || config.rules.length == 0) {
         (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
         isValid = false;

@@ -56,7 +56,7 @@ function CheckIfApplies(prBaseRef: string, prHeadRef: string, baseRef: string, h
 }
 
 function ValidateAndExtractConfig(config: BranchLabellerModuleConfig) {
-    let isValid = false;
+    let isValid = true;
 
     if (!config.rules || config.rules.length == 0) {
         logError(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
