@@ -18846,7 +18846,6 @@ async function main() {
         }
     }
     catch (error) {
-        (0, Core_1.logError)(error.message);
         (0, Core_1.setFailed)(error.message);
     }
 }

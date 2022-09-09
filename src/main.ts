@@ -33,7 +33,6 @@ async function main() {
             throw new Error('Unable to determine correct action based on triggering event');
         }
     } catch (error: any) {
-        logError(error.message);
         setFailed(error.message);
     }
 }
