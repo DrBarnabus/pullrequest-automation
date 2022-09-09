@@ -1,23 +1,12 @@
-import { ReviewerExpander } from "./config";
-import { endGroup, logError, logInfo, logWarning, startGroup } from "./core"
-import { getPullRequestResponse, GitHubClient, listMembersOfTeam, requestReviewersOnPullRequest } from "./github-client"
+import { ReviewerExpanderModuleConfig } from "../Config";
+import { endGroup, GetPullRequestResponse, GitHubClient, logError, logInfo, logWarning, startGroup } from "../Core"
 
-type reviewerExpanderProps = {
-    gitHubClient: GitHubClient,
-    pullRequest: getPullRequestResponse,
-    config?: ReviewerExpander
-}
-
-export async function processReviewerExpander({
-    gitHubClient,
-    pullRequest,
-    config
-}: reviewerExpanderProps) {
-    startGroup('Reviewer Expander');
+export async function ProcessReviewerExpander(config: ReviewerExpanderModuleConfig | undefined, pullRequest: GetPullRequestResponse) {
+    startGroup('Modules/ReviewerExpander');
 
     try {
-        if (config?.disable) {
-            logInfo(`Reviewer Expander is disabled, skipping...`);
+        if (!config?.enabled) {
+            logInfo(`Modules/ReviewerExpander is not enabled. skipping...`);
             return;
         }
 
@@ -32,7 +21,7 @@ export async function processReviewerExpander({
         }
 
         const requestedTeam = pullRequest.requested_teams[0];
-        const teamMembers = await listMembersOfTeam(gitHubClient, requestedTeam.slug);
+        const teamMembers = await GitHubClient.get().ListMembersOfTeam(requestedTeam.slug);
 
         let reviewersToRequest: string[] = [];
         for (const teamMember of teamMembers) {
@@ -44,7 +33,7 @@ export async function processReviewerExpander({
 
         if (reviewersToRequest.length > 0) {
             logInfo(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
-            await requestReviewersOnPullRequest(gitHubClient, pullRequest.number, reviewersToRequest);
+            await GitHubClient.get().RequestReviewersOnPullRequest(pullRequest.number, reviewersToRequest);
         }
     } catch (err) {
         logError(`An error ocurred while processing reviewer expander: ${err}`);

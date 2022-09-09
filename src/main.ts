@@ -1,27 +1,33 @@
 import { context } from '@actions/github';
 import { WebhookPayload } from '@actions/github/lib/interfaces';
-import { processApprovalLabeller } from './approval-labeller';
-import { processBranchLabeller } from './branch-labeller';
-import { Config, loadConfig, } from './config';
-import { endGroup, logDebug, logError, logInfo, setFailed, startGroup } from './core';
-import { DesiredLabels } from './desired-labels';
-import { getGitHubClient, getPullRequest, GitHubClient, listLabelsOnIssue, setLabelsOnIssue } from './github-client'
-import { processMergeSafetyCommand } from './merge-safety-command';
-import { processReviewerExpander } from './reviewer-expander';
+import { ProcessApprovalLabeller } from './Modules/ApprovalLabeller';
+import { ProcessBranchLabeller } from './Modules/BranchLabeller';
+import { CommandConfigs, LoadConfig, ModuleConfigs, } from './Config';
+import { GitHubClient, logDebug, logError, logInfo, setFailed } from './Core';
+import { LabelState } from './Core/LabelState';
+import { ProcessMergeSafety } from './Commands/MergeSafety';
+import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
 
 async function main() {
     try {
-        const gitHubClient: GitHubClient = getGitHubClient();
-        const config = await loadConfig(gitHubClient);
+        const config = await LoadConfig();
 
         const eventName = context.eventName;
-        logInfo(`Workflow triggered by ${eventName}`);
-        logDebug(`Payload: ${JSON.stringify(context.payload, null, 2)}`);
+        logDebug(`Workflow triggered by ${eventName}`);
+        logDebug(`Event Payload: ${JSON.stringify(context.payload, null, 2)}`);
 
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
-            await processPullRequest(gitHubClient, config, context.payload);
+            if (!config?.modules) {
+                throw new Error(`Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
+            }
+
+            await ProcessModules(config.modules, context.payload);
         } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request != null) {
-            await processCommentCommands(gitHubClient, config, context.payload);
+            if (!config?.commands) {
+                throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
+            }
+            
+            await ProcessCommands(config.commands, context.payload);
         } else {
             throw new Error('Unable to determine correct action based on triggering event');
         }
@@ -31,41 +37,28 @@ async function main() {
     }
 }
 
-async function processPullRequest(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
+async function ProcessModules(config: ModuleConfigs, payload: WebhookPayload) {
     const pullRequestNumber = payload.pull_request?.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
 
-    const pullRequest = await getPullRequest(gitHubClient, pullRequestNumber);
+    const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
     logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
-    const existingLabels = await listLabelsOnIssue(gitHubClient, pullRequestNumber);
-    const desiredLabels = new DesiredLabels(existingLabels.map((l) => l.name));
+    const existingLabels = await GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
+    const labelState = new LabelState(existingLabels.map((l) => l.name));
 
-    await processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
-    await processBranchLabeller({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
-    await processReviewerExpander({ gitHubClient, pullRequest, config: config.reviewerExpander });
+    await ProcessApprovalLabeller(config.approvalLabeller, pullRequest, labelState);
+    await ProcessBranchLabeller(config.branchLabeller, pullRequest, labelState);
+    await ProcessReviewerExpander(config.reviewerExpander, pullRequest);
 
-    await applyLabelState(gitHubClient, pullRequestNumber, desiredLabels);
+    await labelState.Apply(pullRequestNumber);
 
     logInfo('Finished processing');
 }
 
-async function applyLabelState(gitHubClient: GitHubClient, pullRequestNumber: number, desiredLabels: DesiredLabels) {
-    startGroup('Apply Labels');
-
-    logInfo(`Current State of Labels: ${JSON.stringify(desiredLabels.existingLabels)}`);
-    logInfo(`Desired State of Labels: ${JSON.stringify(desiredLabels.labels)}`);
-
-    await setLabelsOnIssue(gitHubClient, pullRequestNumber, desiredLabels.labels);
-
-    logInfo('Labels have been set');
-
-    endGroup();
-}
-
-async function processCommentCommands(gitHubClient: GitHubClient, config: Config, payload: WebhookPayload) {
+async function ProcessCommands(config: CommandConfigs, payload: WebhookPayload) {
     if (!payload.comment) {
         throw new Error(`Unable to extract comment from context payload`);
     }
@@ -84,10 +77,10 @@ async function processCommentCommands(gitHubClient: GitHubClient, config: Config
         throw new Error('Unable to determine pull request number from context');
     }
 
-    const pullRequest = await getPullRequest(gitHubClient, pullRequestNumber);
+    const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
     logInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
-    await processMergeSafetyCommand({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
+    await ProcessMergeSafety(config.mergeSafety, pullRequest, comment);
 
     logInfo('Finished processing');
 }

@@ -10,3 +10,6 @@ export {
     startGroup,
     endGroup
 };
+
+export * from './GitHubClient';
+export * from './LabelState';

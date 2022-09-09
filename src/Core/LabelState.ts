@@ -1,4 +1,6 @@
-export class DesiredLabels
+import { endGroup, GitHubClient, logInfo, startGroup } from ".";
+
+export class LabelState
 {
     existingLabels: string[];
     labels: string[];
@@ -8,7 +10,7 @@ export class DesiredLabels
         this.labels = [...existingLabels];
     }
 
-    add(labelToAdd: string): boolean {
+    Add(labelToAdd: string): boolean {
         const index = this.labels.indexOf(labelToAdd);
         if (index !== -1) {
             // Label already added
@@ -20,7 +22,7 @@ export class DesiredLabels
         }
     }
 
-    remove(labelToRemove: string): boolean {
+    Remove(labelToRemove: string): boolean {
         const index = this.labels.indexOf(labelToRemove);
         if (index === -1) {
             // Label already removed
@@ -30,5 +32,18 @@ export class DesiredLabels
             this.labels.splice(index, 1);
             return true;
         }
+    }
+
+    async Apply(pullRequestNumber: number) {
+        startGroup('Core/ApplyLabelState');
+
+        logInfo(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
+        logInfo(`Target State of Labels: ${JSON.stringify(this.labels)}`);
+
+        await GitHubClient.get().SetLabelsOnIssue(pullRequestNumber, this.labels);
+
+        logInfo('Label state has been applied');
+
+        endGroup();
     }
 }

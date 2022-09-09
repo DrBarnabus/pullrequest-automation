@@ -1,10 +1,9 @@
-import { logInfo, startGroup, endGroup, getInput } from './core';
-import { parse as parseYaml } from 'yaml';
-import { fetchContent, GitHubClient } from "./github-client";
-import { Config } from './models/config';
+import { parse as parseYaml } from "yaml";
+import { endGroup, getInput, logInfo, startGroup, GitHubClient } from "../Core";
+import { Config } from "./Config";
 
-export async function loadConfig(client: GitHubClient): Promise<Config> {
-    startGroup('Load Config');
+export async function LoadConfig(): Promise<Config> {
+    startGroup('Core/LoadConfig');
 
     try {
         const configPath = getInput('config-path', { required: true });
@@ -17,7 +16,7 @@ export async function loadConfig(client: GitHubClient): Promise<Config> {
             logInfo(`Loading config from ${configPath} in ${configRef}`);
         }
 
-        const configFileContents = await fetchContent(client, configPath, configRef);
+        const configFileContents = await GitHubClient.get().FetchContent(configPath, configRef);
         if (configFileContents === null) {
             throw new Error(`Unable to load config from ${configPath}`);
         }
@@ -30,5 +29,3 @@ export async function loadConfig(client: GitHubClient): Promise<Config> {
         endGroup();
     }
 }
-
-export * from './models/config';

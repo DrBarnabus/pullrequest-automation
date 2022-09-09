@@ -1,160 +1,124 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 7296:
+/***/ 2978:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processApprovalLabeller = void 0;
-const core_1 = __nccwpck_require__(2298);
-const github_client_1 = __nccwpck_require__(4072);
-async function processApprovalLabeller({ gitHubClient, pullRequest, approvalLabels, desiredLabels }) {
-    (0, core_1.startGroup)('Approval Labeller');
+exports.ProcessMergeSafety = void 0;
+const Core_1 = __nccwpck_require__(8038);
+async function ProcessMergeSafety(config, pullRequest, comment) {
+    (0, Core_1.startGroup)('Commands/MergeSafety');
     try {
-        if (approvalLabels.disable) {
-            (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
-            return;
-        }
-        if (pullRequest.draft) {
-            if (approvalLabels.labelsToApply.draft) {
-                (0, core_1.logInfo)(`Adding draft label ${approvalLabels.labelsToApply.draft} as pull request is currently a draft`);
-                desiredLabels.add(approvalLabels.labelsToApply.draft);
-            }
-            else {
-                (0, core_1.logInfo)(`Pull request is currently a draft and no draft label is configured`);
-            }
-            return;
-        }
-        const pullRequestReviews = await (0, github_client_1.listReviewsOnPullRequest)(gitHubClient, pullRequest.number);
-        const reviewStatuses = getReviewStatuses(pullRequest, pullRequestReviews);
-        const { totalApproved, isApproved, isRejected } = calculateReviewStatus(reviewStatuses, approvalLabels);
-        (0, core_1.logInfo)(`Approvals: ${totalApproved}/${approvalLabels.requiredApprovals} (IsApproved=${isApproved}, IsRejected=${isRejected})`);
-        const labelsToApply = approvalLabels.labelsToApply;
-        desiredLabels.remove(labelsToApply.approved);
-        desiredLabels.remove(labelsToApply.rejected);
-        desiredLabels.remove(labelsToApply.needsReview);
-        if (labelsToApply.draft) {
-            desiredLabels.remove(labelsToApply.draft);
-        }
-        if (isApproved) {
-            (0, core_1.logInfo)(`Adding approval label ${labelsToApply.approved} as number of required APPROVED reviews was met`);
-            desiredLabels.add(labelsToApply.approved);
-        }
-        else if (isRejected) {
-            (0, core_1.logInfo)(`Adding rejected label ${labelsToApply.rejected} as a review contained CHANGES_REQUESTED`);
-            desiredLabels.add(labelsToApply.rejected);
-        }
-        else {
-            (0, core_1.logInfo)(`Adding needsReview label ${labelsToApply.needsReview} as required reviews not met`);
-            desiredLabels.add(labelsToApply.needsReview);
-        }
-    }
-    finally {
-        (0, core_1.endGroup)();
-    }
-}
-exports.processApprovalLabeller = processApprovalLabeller;
-function getReviewStatuses(pullRequest, pullRequestReviews) {
-    const reviewStatuses = new Map();
-    for (const pullRequestReview of pullRequestReviews) {
-        if (pullRequestReview.user == null) {
-            (0, core_1.logWarning)(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
-            continue;
-        }
-        if (pullRequestReview.commit_id !== pullRequest.head.sha) {
-            (0, core_1.logDebug)(`Ignoring review as it is not for the current commit reference`);
-            continue;
-        }
-        if (pullRequestReview.state === 'APPROVED' || pullRequestReview.state === 'CHANGES_REQUESTED') {
-            reviewStatuses.set(pullRequestReview.user.login, pullRequestReview.state);
-            (0, core_1.logDebug)(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
-        }
-        else {
-            (0, core_1.logDebug)(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
-        }
-    }
-    return reviewStatuses;
-}
-function calculateReviewStatus(reviewStatuses, approvalLabels) {
-    let totalApproved = 0, isApproved = false, isRejected = false;
-    for (let [user, state] of reviewStatuses) {
-        (0, core_1.logDebug)(`${user} ended in state of ${state}`);
-        switch (state) {
-            case 'CHANGES_REQUESTED':
-                isRejected = true;
-                break;
-            case 'APPROVED':
-                ++totalApproved;
-                isApproved = totalApproved >= approvalLabels.requiredApprovals;
-                break;
-        }
-        if (isApproved || isRejected) {
-            break;
-        }
-    }
-    return { totalApproved, isApproved, isRejected };
-}
-
-
-/***/ }),
-
-/***/ 5355:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processBranchLabeller = void 0;
-const core_1 = __nccwpck_require__(2298);
-async function processBranchLabeller({ pullRequest, branchLabels, desiredLabels }) {
-    (0, core_1.startGroup)('Branch Labeller');
-    try {
-        if (branchLabels.disable) {
-            (0, core_1.logInfo)('Approval labeller is disabled in config. Skipping...');
-            return;
-        }
-        const prBaseRef = pullRequest.base.ref;
-        const prHeadRef = pullRequest.head.ref;
-        (0, core_1.logInfo)(`Processing branch labeller (BaseRef=${prBaseRef}, HeadRef=${prHeadRef})`);
-        for (const { baseRef, headRef, labelToApply } of branchLabels.rules) {
-            const applies = checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
-            if (!applies) {
-                (0, core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
-                const removed = desiredLabels.remove(labelToApply);
-                if (removed) {
-                    (0, core_1.logInfo)(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
-                }
-                continue;
-            }
-            (0, core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
-            desiredLabels.add(labelToApply);
-        }
-    }
-    finally {
-        (0, core_1.endGroup)();
-    }
-}
-exports.processBranchLabeller = processBranchLabeller;
-function checkIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
-    const baseRefExpression = new RegExp(`^${baseRef}$`);
-    if (!baseRefExpression.test(prBaseRef)) {
-        return false;
-    }
-    if (headRef) {
-        const headRefExpression = new RegExp(`^${headRef}$`);
-        if (!headRefExpression.test(prHeadRef)) {
+        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
+            (0, Core_1.logInfo)('Commands/MergeSafety is not enabled, skipping...');
             return false;
         }
+        const { triggers, branchesToProtect } = ValidateAndExtractConfig(config);
+        const normalizedCommentBody = comment.body.toLowerCase();
+        const prBaseRef = pullRequest.base.ref;
+        const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
+        if (!triggered) {
+            (0, Core_1.logInfo)(`Commands/MergeSafety has not been triggered`);
+            return false;
+        }
+        const branchToProtect = MatchBranchToProtect(branchesToProtect, prBaseRef);
+        ;
+        if (!branchToProtect) {
+            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
+            (0, Core_1.logWarning)(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
+            return true;
+        }
+        const compareResponse = await Core_1.GitHubClient.get().CompareCommits(branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
+        if (compareResponse.ahead_by >= 1) {
+            let body = ConstructChangesCommentBody(branchToProtect, compareResponse);
+            await Core_1.GitHubClient.get().CreateCommentOnIssue(pullRequest.number, body);
+            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, '-1');
+        }
+        else {
+            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, '+1');
+        }
+        return true;
     }
-    return true;
+    finally {
+        (0, Core_1.endGroup)();
+    }
+}
+exports.ProcessMergeSafety = ProcessMergeSafety;
+function ConstructChangesCommentBody(branchToProtect, response) {
+    var _a, _b;
+    let body = `## Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
+    body += `\n\n<details>\n<summary>View Changes</summary>\n\n`;
+    for (const commit of response.commits) {
+        body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}](${(_b = commit.committer) === null || _b === void 0 ? void 0 : _b.html_url})\n`;
+    }
+    body += `\n</details>`;
+    return body;
+}
+function CheckIfTriggered(normalizedCommentBody, triggers) {
+    if (typeof triggers === 'string') {
+        return normalizedCommentBody.includes(triggers.toLowerCase());
+    }
+    else if (Array.isArray(triggers)) {
+        for (const trigger of triggers) {
+            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
+            if (triggered) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function MatchBranchToProtect(branchesToProtect, prBaseRef) {
+    for (const branchToProtect of branchesToProtect) {
+        if (branchToProtect.baseRef === prBaseRef) {
+            return branchToProtect;
+        }
+    }
+    return null;
+}
+function ValidateAndExtractConfig(config) {
+    let isValid = true;
+    if (!config.triggers) {
+        (0, Core_1.logInfo)(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
+        config.triggers = 'Safe to merge?';
+    }
+    if (!config.branchesToProtect) {
+        (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
+        isValid = false;
+    }
+    const branchesToProtect = config.branchesToProtect;
+    for (let i = 0; i < branchesToProtect.length; i++) {
+        const branchToProtect = branchesToProtect[i];
+        if (!branchToProtect.baseRef) {
+            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
+            isValid = false;
+        }
+        if (!branchToProtect.comparisonBaseRef) {
+            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
+            isValid = false;
+        }
+        if (!branchToProtect.comparisonHeadRef) {
+            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
+            isValid = false;
+        }
+        if (branchToProtect.comparisonBaseRef === branchToProtect.comparisonHeadRef) {
+            (0, Core_1.logError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
+            isValid = false;
+        }
+    }
+    if (!isValid) {
+        throw new Error('modules.branchLabeller config failed validation');
+    }
+    return { triggers: config.triggers, branchesToProtect };
 }
 
 
 /***/ }),
 
-/***/ 88:
+/***/ 3295:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -208,7 +172,7 @@ __exportStar(__nccwpck_require__(1583), exports);
 
 /***/ }),
 
-/***/ 2298:
+/***/ 8038:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -228,19 +192,20 @@ Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function ()
 
 /***/ }),
 
-/***/ 2858:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ 6207:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DesiredLabels = void 0;
-class DesiredLabels {
+exports.LabelState = void 0;
+const _1 = __nccwpck_require__(8038);
+class LabelState {
     constructor(existingLabels) {
         this.existingLabels = existingLabels;
         this.labels = [...existingLabels];
     }
-    add(labelToAdd) {
+    Add(labelToAdd) {
         const index = this.labels.indexOf(labelToAdd);
         if (index !== -1) {
             // Label already added
@@ -252,7 +217,7 @@ class DesiredLabels {
             return true;
         }
     }
-    remove(labelToRemove) {
+    Remove(labelToRemove) {
         const index = this.labels.indexOf(labelToRemove);
         if (index === -1) {
             // Label already removed
@@ -264,8 +229,295 @@ class DesiredLabels {
             return true;
         }
     }
+    async Apply(pullRequestNumber) {
+        (0, _1.startGroup)('Core/ApplyLabelState');
+        (0, _1.logInfo)(`Current State of Labels: ${JSON.stringify(this.existingLabels)}`);
+        (0, _1.logInfo)(`Target State of Labels: ${JSON.stringify(this.labels)}`);
+        await _1.GitHubClient.get().SetLabelsOnIssue(pullRequestNumber, this.labels);
+        (0, _1.logInfo)('Label state has been applied');
+        (0, _1.endGroup)();
+    }
 }
-exports.DesiredLabels = DesiredLabels;
+exports.LabelState = LabelState;
+
+
+/***/ }),
+
+/***/ 3337:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProcessApprovalLabeller = void 0;
+const Core_1 = __nccwpck_require__(8038);
+async function ProcessApprovalLabeller(config, pullRequest, labelState) {
+    (0, Core_1.startGroup)('Modules/ApprovalLabeller');
+    try {
+        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
+            (0, Core_1.logInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
+            return;
+        }
+        const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
+        if (pullRequest.draft) {
+            if (labelsToApply.draft) {
+                (0, Core_1.logInfo)(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
+                labelState.Add(labelsToApply.draft);
+            }
+            else {
+                (0, Core_1.logInfo)(`Pull request is currently a draft and no draft label is configured`);
+            }
+            return;
+        }
+        const reviewStatus = await GetReviewStatus(pullRequest);
+        const { totalApproved, isApproved, isRejected } = EvaluateReviewStatus(reviewStatus, requiredApprovals);
+        (0, Core_1.logInfo)(`Approvals: ${totalApproved}/${requiredApprovals}, IsApproved: ${isApproved}, IsRejected: ${isRejected}`);
+        (0, Core_1.logDebug)(`Removing existing approval labels if present`);
+        labelState.Remove(labelsToApply.approved);
+        labelState.Remove(labelsToApply.rejected);
+        labelState.Remove(labelsToApply.needsReview);
+        if (labelsToApply.draft) {
+            labelState.Remove(labelsToApply.draft);
+        }
+        if (isRejected) {
+            (0, Core_1.logInfo)(`State is rejected adding label ${labelsToApply.rejected}`);
+            labelState.Add(labelsToApply.rejected);
+        }
+        else if (isApproved) {
+            (0, Core_1.logInfo)(`State is approved adding label ${labelsToApply.approved}`);
+            labelState.Add(labelsToApply.approved);
+        }
+        else {
+            (0, Core_1.logInfo)(`State is neither rejected or approved adding label ${labelsToApply.needsReview}`);
+            labelState.Add(labelsToApply.needsReview);
+        }
+    }
+    finally {
+        (0, Core_1.endGroup)();
+    }
+}
+exports.ProcessApprovalLabeller = ProcessApprovalLabeller;
+async function GetReviewStatus(pullRequest) {
+    const pullRequestReviews = await Core_1.GitHubClient.get().ListReviewsOnPullRequest(pullRequest.number);
+    const reviewStatus = new Map();
+    for (const pullRequestReview of pullRequestReviews) {
+        if (pullRequestReview.user == null) {
+            (0, Core_1.logWarning)(`Ignorning review with Id ${pullRequestReview.id} as User was null`);
+            continue;
+        }
+        if (pullRequestReview.commit_id !== pullRequest.head.sha) {
+            (0, Core_1.logDebug)(`Ignoring review as it is not for the current commit reference`);
+            continue;
+        }
+        if (pullRequestReview.state === 'APPROVED' || pullRequestReview.state === 'CHANGES_REQUESTED') {
+            reviewStatus.set(pullRequestReview.user.login, pullRequestReview.state);
+            (0, Core_1.logDebug)(`Adding review from User ${pullRequestReview.user.login} at ${pullRequestReview.submitted_at}`);
+        }
+        else {
+            (0, Core_1.logDebug)(`Ignoring review from User ${pullRequestReview.user.login} as it is not in the state APPROVED or CHANGES_REQUESTED`);
+        }
+    }
+    return reviewStatus;
+}
+function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
+    let totalApproved = 0, isApproved = false, isRejected = false;
+    for (const [user, state] of reviewStatuses) {
+        (0, Core_1.logDebug)(`${user} ended in state of ${state}`);
+        switch (state) {
+            case 'CHANGES_REQUESTED':
+                isRejected = true;
+                break;
+            case 'APPROVED':
+                ++totalApproved;
+                isApproved = totalApproved >= requiredApprovals;
+                break;
+        }
+        if (isApproved || isRejected) {
+            break;
+        }
+    }
+    return { totalApproved, isApproved, isRejected };
+}
+function ValidateAndExtractConfig(config) {
+    let isValid = true;
+    if (config.requiredApprovals == 0) {
+        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+        isValid = false;
+    }
+    if (!config.labelsToApply) {
+        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
+        isValid = false;
+    }
+    if (!config.labelsToApply.approved) {
+        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.approved, must be supplied`);
+        isValid = false;
+    }
+    if (!config.labelsToApply.rejected) {
+        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.rejected, must be supplied`);
+        isValid = false;
+    }
+    if (!config.labelsToApply.needsReview) {
+        (0, Core_1.logError)(`Config Validation failed modules.approvalLabeller.labelsToApply.needsReview, must be supplied`);
+        isValid = false;
+    }
+    if (!isValid) {
+        throw new Error('Config Validation for modules.approvalLabeller has failed');
+    }
+    return { requiredApprovals: config.requiredApprovals, labelsToApply: config.labelsToApply };
+}
+
+
+/***/ }),
+
+/***/ 5497:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProcessBranchLabeller = void 0;
+const Core_1 = __nccwpck_require__(8038);
+async function ProcessBranchLabeller(config, pullRequest, labelState) {
+    (0, Core_1.startGroup)('Modules/BranchLabeller');
+    try {
+        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
+            (0, Core_1.logInfo)(`Modules/BranchLabeller is not enabled. skipping...`);
+            return;
+        }
+        const { rules } = ValidateAndExtractConfig(config);
+        const prBaseRef = pullRequest.base.ref;
+        const prHeadRef = pullRequest.head.ref;
+        (0, Core_1.logInfo)(`PrBaseRef: ${prBaseRef}, PrHeadRef: ${prHeadRef}, RulesToProcess: ${rules.length}`);
+        for (const { baseRef, headRef, labelToApply } of rules) {
+            const applies = CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef);
+            if (!applies) {
+                (0, Core_1.logDebug)(`Ignoring branch label ${labelToApply} rules not matched`);
+                const removed = labelState.Remove(labelToApply);
+                if (removed) {
+                    (0, Core_1.logInfo)(`Removing existing branch label ${labelToApply} as rules to not match current head/base refs`);
+                }
+                continue;
+            }
+            (0, Core_1.logInfo)(`Adding branch label ${labelToApply} as rules matched current head/base refs`);
+            labelState.Add(labelToApply);
+        }
+    }
+    finally {
+        (0, Core_1.endGroup)();
+    }
+}
+exports.ProcessBranchLabeller = ProcessBranchLabeller;
+function CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
+    const baseRefExpression = new RegExp(`^${baseRef}$`);
+    if (!baseRefExpression.test(prBaseRef)) {
+        return false;
+    }
+    if (headRef) {
+        const headRefExpression = new RegExp(`^${headRef}$`);
+        if (!headRefExpression.test(prHeadRef)) {
+            return false;
+        }
+    }
+    return true;
+}
+function ValidateAndExtractConfig(config) {
+    let isValid = false;
+    if (!config.rules || config.rules.length == 0) {
+        (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
+        isValid = false;
+    }
+    const rules = config.rules;
+    for (let i = 0; i < rules.length; i++) {
+        const rule = rules[i];
+        if (!rule.baseRef) {
+            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].baseRef, must be supplied`);
+            isValid = false;
+        }
+        if (rule.headRef && rule.baseRef == rule.headRef) {
+            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].headRef, if supplied must not match baseRef`);
+            isValid = false;
+        }
+        if (!rule.labelToApply) {
+            (0, Core_1.logError)(`Config Validation failed modules.branchLabeller.rules[${i}].labelToApply, must not be supplied`);
+            isValid = false;
+        }
+    }
+    if (!isValid) {
+        throw new Error('modules.branchLabeller config failed validation');
+    }
+    return { rules };
+}
+
+
+/***/ }),
+
+/***/ 6932:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProcessReviewerExpander = void 0;
+const Core_1 = __nccwpck_require__(8038);
+async function ProcessReviewerExpander(config, pullRequest) {
+    var _a;
+    (0, Core_1.startGroup)('Modules/ReviewerExpander');
+    try {
+        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
+            (0, Core_1.logInfo)(`Modules/ReviewerExpander is not enabled. skipping...`);
+            return;
+        }
+        if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
+            (0, Core_1.logInfo)(`Nothing to expand as no requested_teams on the pull request`);
+            return;
+        }
+        if (pullRequest.requested_teams.length > 1) {
+            (0, Core_1.logWarning)(`More than one team requested for review which is not currently supported`);
+            return;
+        }
+        const requestedTeam = pullRequest.requested_teams[0];
+        const teamMembers = await Core_1.GitHubClient.get().ListMembersOfTeam(requestedTeam.slug);
+        let reviewersToRequest = [];
+        for (const teamMember of teamMembers) {
+            const existingReviewer = (_a = pullRequest.requested_reviewers) === null || _a === void 0 ? void 0 : _a.findIndex((r) => r.login == teamMember.login);
+            if (existingReviewer === -1) {
+                reviewersToRequest.push(teamMember.login);
+            }
+        }
+        if (reviewersToRequest.length > 0) {
+            (0, Core_1.logInfo)(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
+            await Core_1.GitHubClient.get().RequestReviewersOnPullRequest(pullRequest.number, reviewersToRequest);
+        }
+    }
+    catch (err) {
+        (0, Core_1.logError)(`An error ocurred while processing reviewer expander: ${err}`);
+        throw err;
+    }
+    finally {
+        (0, Core_1.endGroup)();
+    }
+}
+exports.ProcessReviewerExpander = ProcessReviewerExpander;
+
+
+/***/ }),
+
+/***/ 2298:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.endGroup = exports.startGroup = exports.setFailed = exports.getInput = exports.logError = exports.logWarning = exports.logInfo = exports.logDebug = void 0;
+const core_1 = __nccwpck_require__(2186);
+Object.defineProperty(exports, "logDebug", ({ enumerable: true, get: function () { return core_1.debug; } }));
+Object.defineProperty(exports, "logInfo", ({ enumerable: true, get: function () { return core_1.info; } }));
+Object.defineProperty(exports, "logWarning", ({ enumerable: true, get: function () { return core_1.warning; } }));
+Object.defineProperty(exports, "logError", ({ enumerable: true, get: function () { return core_1.error; } }));
+Object.defineProperty(exports, "getInput", ({ enumerable: true, get: function () { return core_1.getInput; } }));
+Object.defineProperty(exports, "setFailed", ({ enumerable: true, get: function () { return core_1.setFailed; } }));
+Object.defineProperty(exports, "startGroup", ({ enumerable: true, get: function () { return core_1.startGroup; } }));
+Object.defineProperty(exports, "endGroup", ({ enumerable: true, get: function () { return core_1.endGroup; } }));
 
 
 /***/ }),
@@ -447,152 +699,12 @@ exports.listMembersOfTeam = listMembersOfTeam;
 
 /***/ }),
 
-/***/ 6005:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processMergeSafetyCommand = void 0;
-const core_1 = __nccwpck_require__(2298);
-const github_client_1 = __nccwpck_require__(4072);
-async function processMergeSafetyCommand({ gitHubClient, config, comment, pullRequest }) {
-    var _a, _b;
-    (0, core_1.startGroup)('Command: MergeSafety');
-    try {
-        if (config.disable) {
-            (0, core_1.logInfo)('Command is disabled. Skipping...');
-            return false;
-        }
-        if (!config.branchesToProtect) {
-            (0, core_1.logWarning)(`Command is enabled but no branches are configured for protection, add branches or disable`);
-            return false;
-        }
-        if (!config.triggers) {
-            (0, core_1.logDebug)(`Command is enabled but no triggers configured, adding default trigger of 'Safe to merge?'`);
-            config.triggers = 'Safe to merge?';
-        }
-        const normalizedCommentBody = comment.body.toLowerCase();
-        const prBaseRef = pullRequest.base.ref;
-        const triggered = checkIfTriggered(normalizedCommentBody, config.triggers);
-        if (!triggered) {
-            (0, core_1.logDebug)(`Command has not been triggered`);
-            return false;
-        }
-        (0, core_1.logDebug)(`Command has been triggerred, checking config for protections...`);
-        const branchToProtect = getBranchToProtect(config, prBaseRef);
-        ;
-        if (!branchToProtect) {
-            (0, core_1.logWarning)(`Command was triggered but no protections were configured for Pull Request baseRef ${prBaseRef}`);
-            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, 'confused');
-            return true;
-        }
-        (0, core_1.logInfo)(`Pull Request baseRef ${prBaseRef} is configured with branch protections\n${JSON.stringify(branchToProtect, null, 2)}`);
-        const response = await (0, github_client_1.compareCommits)(gitHubClient, branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
-        if (response.ahead_by >= 1) {
-            let body = `## Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
-            body += `\n\n<details>\n<summary>View Changes</summary>\n\n`;
-            for (const commit of response.commits) {
-                body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}](${(_b = commit.committer) === null || _b === void 0 ? void 0 : _b.html_url})\n`;
-            }
-            body += `\n</details>`;
-            await (0, github_client_1.createCommentOnIssue)(gitHubClient, pullRequest.number, body);
-            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '-1');
-        }
-        else {
-            await (0, github_client_1.createReactionForIssueComment)(gitHubClient, comment.id, '+1');
-        }
-        return true;
-    }
-    finally {
-        (0, core_1.endGroup)();
-    }
-}
-exports.processMergeSafetyCommand = processMergeSafetyCommand;
-function checkIfTriggered(normalizedCommentBody, triggers) {
-    if (typeof triggers === 'string') {
-        return normalizedCommentBody.includes(triggers.toLowerCase());
-    }
-    else if (Array.isArray(triggers)) {
-        for (const trigger of triggers) {
-            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
-            if (triggered) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-function getBranchToProtect(config, prBaseRef) {
-    for (const potentialBranchToProtect of config.branchesToProtect) {
-        if (potentialBranchToProtect.baseRef === prBaseRef) {
-            return potentialBranchToProtect;
-        }
-    }
-    return null;
-}
-
-
-/***/ }),
-
 /***/ 1583:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 3107:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processReviewerExpander = void 0;
-const core_1 = __nccwpck_require__(2298);
-const github_client_1 = __nccwpck_require__(4072);
-async function processReviewerExpander({ gitHubClient, pullRequest, config }) {
-    var _a;
-    (0, core_1.startGroup)('Reviewer Expander');
-    try {
-        if (config === null || config === void 0 ? void 0 : config.disable) {
-            (0, core_1.logInfo)(`Reviewer Expander is disabled, skipping...`);
-            return;
-        }
-        if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
-            (0, core_1.logInfo)(`Nothing to expand as no requested_teams on the pull request`);
-            return;
-        }
-        if (pullRequest.requested_teams.length > 1) {
-            (0, core_1.logWarning)(`More than one team requested for review which is not currently supported`);
-            return;
-        }
-        const requestedTeam = pullRequest.requested_teams[0];
-        const teamMembers = await (0, github_client_1.listMembersOfTeam)(gitHubClient, requestedTeam.slug);
-        let reviewersToRequest = [];
-        for (const teamMember of teamMembers) {
-            const existingReviewer = (_a = pullRequest.requested_reviewers) === null || _a === void 0 ? void 0 : _a.findIndex((r) => r.login == teamMember.login);
-            if (existingReviewer === -1) {
-                reviewersToRequest.push(teamMember.login);
-            }
-        }
-        if (reviewersToRequest.length > 0) {
-            (0, core_1.logInfo)(`Expanded team ${requestedTeam.name} to ${reviewersToRequest.length} individual reviewers`);
-            await (0, github_client_1.requestReviewersOnPullRequest)(gitHubClient, pullRequest.number, reviewersToRequest);
-        }
-    }
-    catch (err) {
-        (0, core_1.logError)(`An error ocurred while processing reviewer expander: ${err}`);
-        throw err;
-    }
-    finally {
-        (0, core_1.endGroup)();
-    }
-}
-exports.processReviewerExpander = processReviewerExpander;
 
 
 /***/ }),
@@ -18557,62 +18669,58 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const github_1 = __nccwpck_require__(5438);
-const approval_labeller_1 = __nccwpck_require__(7296);
-const branch_labeller_1 = __nccwpck_require__(5355);
-const config_1 = __nccwpck_require__(88);
-const core_1 = __nccwpck_require__(2298);
-const desired_labels_1 = __nccwpck_require__(2858);
-const github_client_1 = __nccwpck_require__(4072);
-const merge_safety_command_1 = __nccwpck_require__(6005);
-const reviewer_expander_1 = __nccwpck_require__(3107);
+const ApprovalLabeller_1 = __nccwpck_require__(3337);
+const BranchLabeller_1 = __nccwpck_require__(5497);
+const Config_1 = __nccwpck_require__(3295);
+const Core_1 = __nccwpck_require__(8038);
+const LabelState_1 = __nccwpck_require__(6207);
+const MergeSafety_1 = __nccwpck_require__(2978);
+const ReviewerExpander_1 = __nccwpck_require__(6932);
 async function main() {
     var _a;
     try {
-        const gitHubClient = (0, github_client_1.getGitHubClient)();
-        const config = await (0, config_1.loadConfig)(gitHubClient);
+        const config = await (0, Config_1.LoadConfig)();
         const eventName = github_1.context.eventName;
-        (0, core_1.logInfo)(`Workflow triggered by ${eventName}`);
-        (0, core_1.logDebug)(`Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
+        (0, Core_1.logDebug)(`Workflow triggered by ${eventName}`);
+        (0, Core_1.logDebug)(`Event Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
-            await processPullRequest(gitHubClient, config, github_1.context.payload);
+            if (!(config === null || config === void 0 ? void 0 : config.modules)) {
+                throw new Error(`Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
+            }
+            await ProcessModules(config.modules, github_1.context.payload);
         }
         else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
-            await processCommentCommands(gitHubClient, config, github_1.context.payload);
+            if (!(config === null || config === void 0 ? void 0 : config.commands)) {
+                throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
+            }
+            await ProcessCommands(config.commands, github_1.context.payload);
         }
         else {
             throw new Error('Unable to determine correct action based on triggering event');
         }
     }
     catch (error) {
-        (0, core_1.logError)(error.message);
-        (0, core_1.setFailed)(error.message);
+        (0, Core_1.logError)(error.message);
+        (0, Core_1.setFailed)(error.message);
     }
 }
-async function processPullRequest(gitHubClient, config, payload) {
+async function ProcessModules(config, payload) {
     var _a;
     const pullRequestNumber = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
-    const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
-    (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
-    const existingLabels = await (0, github_client_1.listLabelsOnIssue)(gitHubClient, pullRequestNumber);
-    const desiredLabels = new desired_labels_1.DesiredLabels(existingLabels.map((l) => l.name));
-    await (0, approval_labeller_1.processApprovalLabeller)({ gitHubClient, pullRequest, approvalLabels: config.approvalLabels, desiredLabels });
-    await (0, branch_labeller_1.processBranchLabeller)({ pullRequest, branchLabels: config.branchLabels, desiredLabels });
-    await (0, reviewer_expander_1.processReviewerExpander)({ gitHubClient, pullRequest, config: config.reviewerExpander });
-    await applyLabelState(gitHubClient, pullRequestNumber, desiredLabels);
-    (0, core_1.logInfo)('Finished processing');
+    const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
+    (0, Core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    const existingLabels = await Core_1.GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
+    const labelState = new LabelState_1.LabelState(existingLabels.map((l) => l.name));
+    await (0, ApprovalLabeller_1.ProcessApprovalLabeller)(config.approvalLabeller, pullRequest, labelState);
+    await (0, BranchLabeller_1.ProcessBranchLabeller)(config.branchLabeller, pullRequest, labelState);
+    await (0, ReviewerExpander_1.ProcessReviewerExpander)(config.reviewerExpander, pullRequest);
+    await labelState.Apply(pullRequestNumber);
+    (0, Core_1.logInfo)('Finished processing');
 }
-async function applyLabelState(gitHubClient, pullRequestNumber, desiredLabels) {
-    (0, core_1.startGroup)('Apply Labels');
-    (0, core_1.logInfo)(`Current State of Labels: ${JSON.stringify(desiredLabels.existingLabels)}`);
-    (0, core_1.logInfo)(`Desired State of Labels: ${JSON.stringify(desiredLabels.labels)}`);
-    await (0, github_client_1.setLabelsOnIssue)(gitHubClient, pullRequestNumber, desiredLabels.labels);
-    (0, core_1.logInfo)('Labels have been set');
-    (0, core_1.endGroup)();
-}
-async function processCommentCommands(gitHubClient, config, payload) {
+async function ProcessCommands(config, payload) {
     var _a, _b;
     if (!payload.comment) {
         throw new Error(`Unable to extract comment from context payload`);
@@ -18621,16 +18729,16 @@ async function processCommentCommands(gitHubClient, config, payload) {
         throw new Error(`Unable to extract issue.pull_request from context payload`);
     }
     const comment = payload.comment;
-    (0, core_1.logInfo)(`Processing comment ${comment.html_url}`);
-    (0, core_1.logDebug)(`Comment body:\n${comment.body}`);
+    (0, Core_1.logInfo)(`Processing comment ${comment.html_url}`);
+    (0, Core_1.logDebug)(`Comment body:\n${comment.body}`);
     const pullRequestNumber = (_b = payload.issue) === null || _b === void 0 ? void 0 : _b.number;
     if (!pullRequestNumber) {
         throw new Error('Unable to determine pull request number from context');
     }
-    const pullRequest = await (0, github_client_1.getPullRequest)(gitHubClient, pullRequestNumber);
-    (0, core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
-    await (0, merge_safety_command_1.processMergeSafetyCommand)({ gitHubClient, config: config.commands.mergeSafety, comment, pullRequest });
-    (0, core_1.logInfo)('Finished processing');
+    const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
+    (0, Core_1.logInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+    await (0, MergeSafety_1.ProcessMergeSafety)(config.mergeSafety, pullRequest, comment);
+    (0, Core_1.logInfo)('Finished processing');
 }
 main();
 
