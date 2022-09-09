@@ -203,7 +203,7 @@ async function loadConfig(client) {
     }
 }
 exports.loadConfig = loadConfig;
-__exportStar(__nccwpck_require__(1583), exports);
+__exportStar(__nccwpck_require__(4671), exports);
 
 
 /***/ }),
@@ -535,7 +535,7 @@ function getBranchToProtect(config, prBaseRef) {
 
 /***/ }),
 
-/***/ 1583:
+/***/ 4671:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
