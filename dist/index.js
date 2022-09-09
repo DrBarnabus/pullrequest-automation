@@ -211,7 +211,7 @@ async function LoadConfig() {
             throw new Error(`Unable to load config from ${configPath}`);
         }
         const config = (0, yaml_1.parse)(configFileContents);
-        (0, Core_1.logInfo)(`Loaded config from ${configPath}\n${JSON.stringify(config)}`);
+        (0, Core_1.logInfo)(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
         return config;
     }
     finally {
