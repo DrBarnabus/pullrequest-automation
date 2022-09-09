@@ -1,4 +1,4 @@
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { EndGroup, GetInput, GitHubClient, LogInfo, StartGroup } from '../Core';
 import { Config } from './Config';
 
@@ -22,7 +22,7 @@ export async function LoadConfig(): Promise<Config> {
         }
 
         const config = parseYaml(configFileContents) as Config;
-        LogInfo(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
+        LogInfo(`Loaded config from ${configPath}\n---\n${stringifyYaml(config, null, 2)}\n---`);
 
         return config;
     } finally {
