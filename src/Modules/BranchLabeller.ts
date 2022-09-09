@@ -4,7 +4,7 @@ import { LabelState } from "../Core/LabelState"
 
 export async function ProcessBranchLabeller(config: BranchLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
     startGroup('Modules/BranchLabeller');
-    
+
     try {
         if (!config?.enabled) {
             logInfo(`Modules/BranchLabeller is not enabled. skipping...`);

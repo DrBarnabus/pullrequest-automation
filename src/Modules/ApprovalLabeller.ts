@@ -54,7 +54,7 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
 
 async function GetReviewStatus(pullRequest: GetPullRequestResponse) {
     const pullRequestReviews = await GitHubClient.get().ListReviewsOnPullRequest(pullRequest.number);
-    
+
     const reviewStatus = new Map<string, string>();
     for (const pullRequestReview of pullRequestReviews) {
         if (pullRequestReview.user == null) {

@@ -42,11 +42,11 @@ export class GitHubClient {
                 path: path,
                 ref: ref
             });
-        
+
             if (Array.isArray(response.data)) {
                 throw new Error('response contained a directory not a file');
             }
-        
+
             type GetRepoContentsResponseDataFile = components['schemas']['content-file'];
             const data = response.data as GetRepoContentsResponseDataFile;
             return Buffer.from(data.content, data.encoding as BufferEncoding).toString();
@@ -65,7 +65,7 @@ export class GitHubClient {
                 base,
                 head
             });
-    
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to compare commits\n${error}`);
@@ -81,7 +81,7 @@ export class GitHubClient {
                 repo: context.repo.repo,
                 pull_number: pullNumber
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to get pull request\n${error}`);
@@ -97,7 +97,7 @@ export class GitHubClient {
                 repo: context.repo.repo,
                 pull_number: pullNumber
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to list reviews pull request\n${error}`);
@@ -114,7 +114,7 @@ export class GitHubClient {
                 pull_number: pullNumber,
                 reviewers
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to request reviewers pull request\n${error}`);
@@ -130,7 +130,7 @@ export class GitHubClient {
                 repo: context.repo.repo,
                 issue_number: issueNumber
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to list labels on issue\n${error}`);
@@ -147,7 +147,7 @@ export class GitHubClient {
                 issue_number: issueNumber,
                 labels
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to set labels on issue\n${error}`);
@@ -164,7 +164,7 @@ export class GitHubClient {
                 issue_number: issueNumber,
                 body
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to create comment on issue\n${error}`);
@@ -181,7 +181,7 @@ export class GitHubClient {
                 comment_id: commentId,
                 content
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to create reaction for issue comment\n${error}`);
@@ -196,7 +196,7 @@ export class GitHubClient {
                 org: context.repo.owner,
                 team_slug: teamSlug
             });
-        
+
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to list members of team\n${error}`);

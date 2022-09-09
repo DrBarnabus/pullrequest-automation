@@ -59,7 +59,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         config-ref: main
-    
+
 ```
 
 ### Workflow Parameters

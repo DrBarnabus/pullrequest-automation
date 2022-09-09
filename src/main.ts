@@ -27,7 +27,7 @@ async function main() {
             if (!config?.commands) {
                 throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
             }
-            
+
             await ProcessCommands(config.commands, context.payload);
         } else {
             throw new Error('Unable to determine correct action based on triggering event');
