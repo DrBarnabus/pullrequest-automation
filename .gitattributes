@@ -1,0 +1,8 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Don't check for trailing whitespace at end of lines in markdown
+*.md -whitespace=blank-at-eol
+
+# Treat dist/index.js as a binary comparison
+dist/index.js binary
