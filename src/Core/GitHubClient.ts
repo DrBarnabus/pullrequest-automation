@@ -6,6 +6,7 @@ export type Octokit = ReturnType<typeof getOctokit>;
 
 export type CompareCommitsResponse = Awaited<ReturnType<GitHubClient['CompareCommits']>>;
 export type GetPullRequestResponse = Awaited<ReturnType<GitHubClient['GetPullRequest']>>;
+export type CreatePullRequestResponse = Awaited<ReturnType<GitHubClient['CreatePullRequest']>>;
 export type ListReviewsOnPullRequestResponse = Awaited<ReturnType<GitHubClient['ListReviewsOnPullRequest']>>;
 export type RequestReviewersOnPullRequestResponse = Awaited<ReturnType<GitHubClient['RequestReviewersOnPullRequest']>>;
 export type ListLabelsOnIssueResponse = Awaited<ReturnType<GitHubClient['ListLabelsOnIssue']>>;
@@ -85,6 +86,26 @@ export class GitHubClient {
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to get pull request\n${error}`);
+        }
+    }
+
+    public async CreatePullRequest(head: string, base: string, title: string, body: string | undefined, draft: boolean) {
+        try {
+            LogDebug(`GitHubClient - CreatePullRequest: ${head}, ${base}, ${title}, ${draft}, ---\n${body}\n---`);
+
+            const { data } = await this.client.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head,
+                base,
+                title,
+                body,
+                draft
+            });
+
+            return data;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to create pull request\n${error}`);
         }
     }
 
