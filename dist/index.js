@@ -128,29 +128,29 @@ exports.ProcessPromotePullRequest = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
     var _a;
-    (0, Core_1.StartGroup)('Commands/PromoteToMain');
+    (0, Core_1.StartGroup)('Commands/PromotePullRequest');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.LogInfo)('Commands/PromoteToMain is not enabled, skipping...');
+            (0, Core_1.LogInfo)('Commands/PromotePullRequest is not enabled, skipping...');
             return false;
         }
         const { triggers, baseRef, headRef, asDraft } = ValidateAndExtractConfig(config);
         const normalizedCommentBody = comment.body.toLowerCase();
         const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
         if (!triggered) {
-            (0, Core_1.LogInfo)(`Commands/PromoteToMain has not been triggered`);
+            (0, Core_1.LogInfo)(`Commands/PromotePullRequest has not been triggered`);
             return false;
         }
         if (!currentPullRequest.merged) {
             await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-            (0, Core_1.LogWarning)(`Commands/PromoteToMain was triggered but the pull request has not been merged yet so no action can be taken`);
+            (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has not been merged yet so no action can be taken`);
             return true;
         }
         if (headRef) {
             const headRefExpression = new RegExp(`^${headRef}$`);
             if (!headRefExpression.test(currentPullRequest.base.ref)) {
                 await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-                (0, Core_1.LogWarning)(`Commands/PromoteToMain was triggered but the pull request has a base of ${currentPullRequest.base.ref} which does not match expression ${headRef}`);
+                (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has a base of ${currentPullRequest.base.ref} which does not match expression ${headRef}`);
                 return true;
             }
         }
@@ -158,7 +158,7 @@ async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
         await Core_1.GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
         await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
         await Core_1.GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} on behalf of @${comment.user.login}`);
-        (0, Core_1.LogInfo)(`Commands/PromoteToMain was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
+        (0, Core_1.LogInfo)(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
         return true;
     }
     finally {
@@ -183,19 +183,19 @@ function CheckIfTriggered(normalizedCommentBody, triggers) {
 function ValidateAndExtractConfig(config) {
     let isValid = true;
     if (!config.triggers) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promoteToMain.triggers, was empty setting default of 'Promote to main!'`);
+        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.triggers, was empty setting default of 'Promote to main!'`);
         config.triggers = 'Promote to main!';
     }
     if (!config.baseRef) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promoteToMain.base, was not supplied setting default of 'main'`);
+        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.base, was not supplied setting default of 'main'`);
         config.baseRef = 'main';
     }
     if (!config.asDraft) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promoteToMain.createAsDraft, was not supplied setting default of 'true'`);
+        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.createAsDraft, was not supplied setting default of 'true'`);
         config.asDraft = true;
     }
     if (!isValid) {
-        throw new Error('modules.promoteToMain config failed validation');
+        throw new Error('modules.promotePullRequest config failed validation');
     }
     return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, asDraft: config.asDraft };
 }
