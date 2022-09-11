@@ -1,5 +1,20 @@
 # v3 Breaking Changes
 
+## Version Pinning
+
+It's strongly recommended that you pin the version you are using to prevent unexpected configuration or behaviour changes this can be done by specifying a tag/branch in the workflow.
+
+### Example:
+
+`.github/workflows/pullrequest-automation.yml`
+```yaml
+...
+    steps:
+    - uses: DrBarnabus/pullrequest-automation@v3.0.1 # Pointing to a tag from the releases page on GitHub
+...
+
+```
+
 ## Config
 
 - `approvalLabels` config section has been moved under `modules` and has been renamed `approvalLabeller`:<br>
