@@ -1,6 +1,6 @@
 {
   "name": "@drbarnabus/pullrequest-automation",
-  "version": "3.0.0-beta.0",
+  "version": "3.0.0",
   "description": "A GitHub Action to automate a number of common pull request tasks in a GitHub Repository.",
   "main": "lib/main.js",
   "scripts": {
