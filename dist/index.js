@@ -630,20 +630,6 @@ class GitHubClient {
             throw new Error(`GitHubClient - Unable to create reaction for issue comment\n${error}`);
         }
     }
-    async GetBranchProtection(branch) {
-        try {
-            (0, _1.LogDebug)(`GitHubClient - GetBranchProtection: ${branch}`);
-            const { data } = await this.client.rest.repos.getBranchProtection({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                branch
-            });
-            return data;
-        }
-        catch (error) {
-            throw new Error(`GitHubClient - Unable to get branch protection\n${error}`);
-        }
-    }
     async ListMembersOfTeam(teamSlug) {
         try {
             (0, _1.LogDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
@@ -763,14 +749,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessApprovalLabeller = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessApprovalLabeller(config, pullRequest, labelState) {
-    var _a;
     (0, Core_1.StartGroup)('Modules/ApprovalLabeller');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
             (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
             return;
         }
-        const { smartMode, requiredApprovals: configuredRequiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
+        const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
                 (0, Core_1.LogInfo)(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
@@ -779,15 +764,6 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             else {
                 (0, Core_1.LogInfo)(`Pull request is currently a draft and no draft label is configured`);
             }
-            return;
-        }
-        let requiredApprovals = configuredRequiredApprovals;
-        if (smartMode) {
-            const branchProtection = await Core_1.GitHubClient.get().GetBranchProtection(pullRequest.base.ref);
-            requiredApprovals = (_a = branchProtection.required_pull_request_reviews) === null || _a === void 0 ? void 0 : _a.required_approving_review_count;
-        }
-        if (requiredApprovals === undefined) {
-            (0, Core_1.LogWarning)(`Unable to determine requiredApprovals for this pull request. ConfiguredRequiredApprovals: ${configuredRequiredApprovals}, SmartMode: ${smartMode}`);
             return;
         }
         const reviewStatus = await GetReviewStatus(pullRequest);
@@ -861,29 +837,9 @@ function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
 }
 function ValidateAndExtractConfig(config) {
     let isValid = true;
-    if (!config.requiredApprovals) {
-        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be either 'smart' or a number greater than or equal to 1`);
+    if (config.requiredApprovals == 0) {
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
         isValid = false;
-    }
-    let smartMode = false;
-    if (typeof config.requiredApprovals === 'string') {
-        if (config.requiredApprovals !== 'smart') {
-            (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be 'smart' when value is a string`);
-            isValid = false;
-        }
-        if (isValid) {
-            smartMode = true;
-        }
-    }
-    let requiredApprovals = undefined;
-    if (typeof config.requiredApprovals === 'number') {
-        if (config.requiredApprovals == 0) {
-            (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1 when valid is a number`);
-            isValid = false;
-        }
-        if (isValid) {
-            requiredApprovals = config.requiredApprovals;
-        }
     }
     if (!config.labelsToApply) {
         (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
@@ -904,7 +860,7 @@ function ValidateAndExtractConfig(config) {
     if (!isValid) {
         throw new Error('Config Validation for modules.approvalLabeller has failed');
     }
-    return { smartMode, requiredApprovals, labelsToApply: config.labelsToApply };
+    return { requiredApprovals: config.requiredApprovals, labelsToApply: config.labelsToApply };
 }
 
 

@@ -11,7 +11,7 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
             return;
         }
 
-        const { smartMode, requiredApprovals: configuredRequiredApprovals, labelsToApply } = ValidateAndExtractConfig(config)
+        const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config)
 
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
@@ -21,17 +21,6 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
                 LogInfo(`Pull request is currently a draft and no draft label is configured`);
             }
 
-            return;
-        }
-
-        let requiredApprovals = configuredRequiredApprovals;
-        if (smartMode) {
-            const branchProtection = await GitHubClient.get().GetBranchProtection(pullRequest.base.ref);
-            requiredApprovals = branchProtection.required_pull_request_reviews?.required_approving_review_count;
-        }
-
-        if (requiredApprovals === undefined) {
-            LogWarning(`Unable to determine requiredApprovals for this pull request. ConfiguredRequiredApprovals: ${configuredRequiredApprovals}, SmartMode: ${smartMode}`);
             return;
         }
 
@@ -115,33 +104,9 @@ function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredAppro
 function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
     let isValid = true;
 
-    if (!config.requiredApprovals) {
-        LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be either 'smart' or a number greater than or equal to 1`);
+    if (config.requiredApprovals == 0) {
+        LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
         isValid = false;
-    }
-
-    let smartMode = false;
-    if (typeof config.requiredApprovals === 'string') {
-        if (config.requiredApprovals !== 'smart') {
-            LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be 'smart' when value is a string`);
-            isValid = false;
-        }
-
-        if (isValid) {
-            smartMode = true;
-        }
-    }
-
-    let requiredApprovals = undefined;
-    if (typeof config.requiredApprovals === 'number') {
-        if (config.requiredApprovals == 0) {
-            LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1 when valid is a number`);
-            isValid = false;
-        }
-
-        if (isValid) {
-            requiredApprovals = config.requiredApprovals;
-        }
     }
 
     if (!config.labelsToApply) {
@@ -168,5 +133,5 @@ function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
         throw new Error('Config Validation for modules.approvalLabeller has failed');
     }
 
-    return { smartMode, requiredApprovals, labelsToApply: config.labelsToApply };
+    return { requiredApprovals: config.requiredApprovals, labelsToApply: config.labelsToApply };
 }
