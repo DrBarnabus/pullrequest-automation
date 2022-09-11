@@ -8,6 +8,7 @@ import { GitHubClient, LogDebug, LogInfo, SetFailed } from './Core';
 import { LabelState } from './Core/LabelState';
 import { ProcessMergeSafety } from './Commands/MergeSafety';
 import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
+import { ProcessPromotePullRequest } from './Commands/PromotePullRequest';
 
 async function main() {
     try {
@@ -81,6 +82,7 @@ async function ProcessCommands(config: CommandConfigs, payload: WebhookPayload) 
     LogInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
     await ProcessMergeSafety(config.mergeSafety, pullRequest, comment);
+    await ProcessPromotePullRequest(config.promotePullRequest, pullRequest, comment);
 
     LogInfo('Finished processing');
 }

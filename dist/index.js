@@ -118,6 +118,91 @@ function ValidateAndExtractConfig(config) {
 
 /***/ }),
 
+/***/ 8669:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProcessPromotePullRequest = void 0;
+const Core_1 = __nccwpck_require__(5782);
+async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
+    var _a;
+    (0, Core_1.StartGroup)('Commands/PromotePullRequest');
+    try {
+        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
+            (0, Core_1.LogInfo)('Commands/PromotePullRequest is not enabled, skipping...');
+            return false;
+        }
+        const { triggers, baseRef, headRef, label } = ValidateAndExtractConfig(config);
+        const normalizedCommentBody = comment.body.toLowerCase();
+        const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
+        if (!triggered) {
+            (0, Core_1.LogInfo)(`Commands/PromotePullRequest has not been triggered`);
+            return false;
+        }
+        if (!currentPullRequest.merged) {
+            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
+            (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has not been merged yet so no action can be taken`);
+            return true;
+        }
+        if (headRef) {
+            const headRefExpression = new RegExp(`^${headRef}$`);
+            if (!headRefExpression.test(currentPullRequest.base.ref)) {
+                await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
+                (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has a base of ${currentPullRequest.base.ref} which does not match expression ${headRef}`);
+                return true;
+            }
+        }
+        const createdPullRequest = await Core_1.GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, (_a = currentPullRequest.body) !== null && _a !== void 0 ? _a : undefined, true);
+        await Core_1.GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
+        await Core_1.GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
+        if (label) {
+            await Core_1.GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
+        }
+        await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
+        await Core_1.GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} into \`${baseRef}\` on behalf of @${comment.user.login}`);
+        (0, Core_1.LogInfo)(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
+        return true;
+    }
+    finally {
+        (0, Core_1.EndGroup)();
+    }
+}
+exports.ProcessPromotePullRequest = ProcessPromotePullRequest;
+function CheckIfTriggered(normalizedCommentBody, triggers) {
+    if (typeof triggers === 'string') {
+        return normalizedCommentBody.includes(triggers.toLowerCase());
+    }
+    else if (Array.isArray(triggers)) {
+        for (const trigger of triggers) {
+            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
+            if (triggered) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function ValidateAndExtractConfig(config) {
+    let isValid = true;
+    if (!config.triggers) {
+        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.triggers, was empty setting default of 'Promote to main!'`);
+        config.triggers = 'Promote to main!';
+    }
+    if (!config.baseRef) {
+        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.base, was not supplied setting default of 'main'`);
+        config.baseRef = 'main';
+    }
+    if (!isValid) {
+        throw new Error('modules.promotePullRequest config failed validation');
+    }
+    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, label: config.label };
+}
+
+
+/***/ }),
+
 /***/ 1211:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -139,6 +224,16 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 /***/ }),
 
 /***/ 2116:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 4099:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -171,6 +266,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(1211), exports);
 __exportStar(__nccwpck_require__(7763), exports);
 __exportStar(__nccwpck_require__(2116), exports);
+__exportStar(__nccwpck_require__(4099), exports);
 
 
 /***/ }),
@@ -211,7 +307,7 @@ async function LoadConfig() {
             throw new Error(`Unable to load config from ${configPath}`);
         }
         const config = (0, yaml_1.parse)(configFileContents);
-        (0, Core_1.LogInfo)(`Loaded config from ${configPath}\n---\n${JSON.stringify(config, null, 2)}\n---`);
+        (0, Core_1.LogInfo)(`Loaded config from ${configPath}\n---\n${(0, yaml_1.stringify)(config, null, 2)}\n---`);
         return config;
     }
     finally {
@@ -398,6 +494,24 @@ class GitHubClient {
             throw new Error(`GitHubClient - Unable to get pull request\n${error}`);
         }
     }
+    async CreatePullRequest(head, base, title, body, draft) {
+        try {
+            (0, _1.LogDebug)(`GitHubClient - CreatePullRequest: ${head}, ${base}, ${title}, ${draft}, ---\n${body}\n---`);
+            const { data } = await this.client.rest.pulls.create({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                head,
+                base,
+                title,
+                body,
+                draft
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to create pull request\n${error}`);
+        }
+    }
     async ListReviewsOnPullRequest(pullNumber) {
         try {
             (0, _1.LogDebug)(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
@@ -454,6 +568,36 @@ class GitHubClient {
         }
         catch (error) {
             throw new Error(`GitHubClient - Unable to set labels on issue\n${error}`);
+        }
+    }
+    async AddLabelsOnIssue(issueNumber, labels) {
+        try {
+            (0, _1.LogDebug)(`GitHubClient - AddLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
+            const { data } = await this.client.rest.issues.addLabels({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber,
+                labels
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to add labels on issue\n${error}`);
+        }
+    }
+    async AddAssigneesOnIssue(issueNumber, assignees) {
+        try {
+            (0, _1.LogDebug)(`GitHubClient - AddAssigneesOnIssue: ${issueNumber}, ${JSON.stringify(assignees)}`);
+            const { data } = await this.client.rest.issues.addAssignees({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                issue_number: issueNumber,
+                assignees
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to add assignees on issue\n${error}`);
         }
     }
     async CreateCommentOnIssue(issueNumber, body) {
@@ -18822,6 +18966,7 @@ const Core_1 = __nccwpck_require__(5782);
 const LabelState_1 = __nccwpck_require__(6207);
 const MergeSafety_1 = __nccwpck_require__(2978);
 const ReviewerExpander_1 = __nccwpck_require__(6932);
+const PromotePullRequest_1 = __nccwpck_require__(8669);
 async function main() {
     var _a;
     try {
@@ -18883,6 +19028,7 @@ async function ProcessCommands(config, payload) {
     const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
     (0, Core_1.LogInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     await (0, MergeSafety_1.ProcessMergeSafety)(config.mergeSafety, pullRequest, comment);
+    await (0, PromotePullRequest_1.ProcessPromotePullRequest)(config.promotePullRequest, pullRequest, comment);
     (0, Core_1.LogInfo)('Finished processing');
 }
 main();
