@@ -1,6 +1,6 @@
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogDebug, LogError, LogInfo, LogWarning, StartGroup } from "../Core";
 import { LabelState } from "../Core/LabelState";
-import { ApprovalLabellerModuleConfig } from "../Config";
+import { ApprovalLabellerModuleConfig, RequiredApprovals } from "../Config";
 
 export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
     StartGroup('Modules/ApprovalLabeller');
@@ -11,7 +11,7 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
             return;
         }
 
-        const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config)
+        const { requiredApprovals: configRequiredApprovals, labelsToApply } = ValidateAndExtractConfig(config)
 
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
@@ -21,6 +21,12 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
                 LogInfo(`Pull request is currently a draft and no draft label is configured`);
             }
 
+            return;
+        }
+
+        const requiredApprovals = ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
+        if (requiredApprovals === 0) {
+            LogInfo(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
             return;
         }
 
@@ -101,12 +107,57 @@ function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredAppro
     return { totalApproved, isApproved, isRejected };
 }
 
+function ExtractRequiredApprovals(configRequiredApprovals: RequiredApprovals[] | number, pullRequest: GetPullRequestResponse) {
+    if (typeof configRequiredApprovals === 'number') {
+        return configRequiredApprovals;
+    }
+
+    const prBaseRef = pullRequest.base.ref;
+    for (const requiredApproval of configRequiredApprovals) {
+        const baseRefExpression = new RegExp(`^${requiredApproval.baseRef}$`);
+        if (baseRefExpression.test(prBaseRef)) {
+            return requiredApproval.requiredApprovals;
+        }
+    }
+
+    return 0;
+}
+
 function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
     let isValid = true;
 
-    if (config.requiredApprovals == 0) {
-        LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+    let requiredApprovals: RequiredApprovals[] | number = 0;
+    if (!config.requiredApprovals) {
+        LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be number or array`);
         isValid = false;
+    } else {
+        if (typeof config.requiredApprovals === 'number') {
+            if (config.requiredApprovals == 0) {
+                LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                isValid = false;
+            }
+
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        } else {
+            let i = 0;
+            for (const requiredApproval of config.requiredApprovals) {
+                if (!requiredApproval.baseRef) {
+                    LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals[${i}].baseRef, must be supplied`);
+                    isValid = false;
+                }
+
+                if (!requiredApproval.requiredApprovals) {
+                    LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        }
     }
 
     if (!config.labelsToApply) {
@@ -133,5 +184,5 @@ function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
         throw new Error('Config Validation for modules.approvalLabeller has failed');
     }
 
-    return { requiredApprovals: config.requiredApprovals, labelsToApply: config.labelsToApply };
+    return { requiredApprovals, labelsToApply: config.labelsToApply };
 }

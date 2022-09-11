@@ -755,7 +755,7 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
             return;
         }
-        const { requiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
+        const { requiredApprovals: configRequiredApprovals, labelsToApply } = ValidateAndExtractConfig(config);
         if (pullRequest.draft) {
             if (labelsToApply.draft) {
                 (0, Core_1.LogInfo)(`Adding draft label ${labelsToApply.draft} as pull request is currently a draft`);
@@ -764,6 +764,11 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             else {
                 (0, Core_1.LogInfo)(`Pull request is currently a draft and no draft label is configured`);
             }
+            return;
+        }
+        const requiredApprovals = ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
+        if (requiredApprovals === 0) {
+            (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
             return;
         }
         const reviewStatus = await GetReviewStatus(pullRequest);
@@ -835,11 +840,52 @@ function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
     }
     return { totalApproved, isApproved, isRejected };
 }
+function ExtractRequiredApprovals(configRequiredApprovals, pullRequest) {
+    if (typeof configRequiredApprovals === 'number') {
+        return configRequiredApprovals;
+    }
+    const prBaseRef = pullRequest.base.ref;
+    for (const requiredApproval of configRequiredApprovals) {
+        const baseRefExpression = new RegExp(`^${requiredApproval.baseRef}$`);
+        if (baseRefExpression.test(prBaseRef)) {
+            return requiredApproval.requiredApprovals;
+        }
+    }
+    return 0;
+}
 function ValidateAndExtractConfig(config) {
     let isValid = true;
-    if (config.requiredApprovals == 0) {
-        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+    let requiredApprovals = 0;
+    if (!config.requiredApprovals) {
+        (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be number or array`);
         isValid = false;
+    }
+    else {
+        if (typeof config.requiredApprovals === 'number') {
+            if (config.requiredApprovals == 0) {
+                (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                isValid = false;
+            }
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        }
+        else {
+            let i = 0;
+            for (const requiredApproval of config.requiredApprovals) {
+                if (!requiredApproval.baseRef) {
+                    (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals[${i}].baseRef, must be supplied`);
+                    isValid = false;
+                }
+                if (!requiredApproval.requiredApprovals) {
+                    (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                    isValid = false;
+                }
+            }
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        }
     }
     if (!config.labelsToApply) {
         (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.labelsToApply, must be supplied`);
@@ -860,7 +906,7 @@ function ValidateAndExtractConfig(config) {
     if (!isValid) {
         throw new Error('Config Validation for modules.approvalLabeller has failed');
     }
-    return { requiredApprovals: config.requiredApprovals, labelsToApply: config.labelsToApply };
+    return { requiredApprovals, labelsToApply: config.labelsToApply };
 }
 
 
