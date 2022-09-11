@@ -45,10 +45,9 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
         }
 
         await GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
-        await GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} on behalf of @${comment.user.login}`);
+        await GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} into \`${baseRef}\` on behalf of @${comment.user.login}`);
 
         LogInfo(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
-
         return true;
     } finally {
         EndGroup();

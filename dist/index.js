@@ -161,7 +161,7 @@ async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
             await Core_1.GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
         }
         await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
-        await Core_1.GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} on behalf of @${comment.user.login}`);
+        await Core_1.GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} into \`${baseRef}\` on behalf of @${comment.user.login}`);
         (0, Core_1.LogInfo)(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
         return true;
     }
