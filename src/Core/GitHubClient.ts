@@ -11,6 +11,8 @@ export type ListReviewsOnPullRequestResponse = Awaited<ReturnType<GitHubClient['
 export type RequestReviewersOnPullRequestResponse = Awaited<ReturnType<GitHubClient['RequestReviewersOnPullRequest']>>;
 export type ListLabelsOnIssueResponse = Awaited<ReturnType<GitHubClient['ListLabelsOnIssue']>>;
 export type SetLabelsOnIssueResponse = Awaited<ReturnType<GitHubClient['SetLabelsOnIssue']>>;
+export type AddLabelsOnIssueResponse = Awaited<ReturnType<GitHubClient['AddLabelsOnIssue']>>;
+export type AddAssigneesOnIssueResponse = Awaited<ReturnType<GitHubClient['AddAssigneesOnIssue']>>;
 export type CreateCommentOnIssueResponse = Awaited<ReturnType<GitHubClient['CreateCommentOnIssue']>>;
 export type CreateReactionOnIssueCommentResponse = Awaited<ReturnType<GitHubClient['CreateReactionOnIssueComment']>>;
 export type ListMembersOfTeamCommentResponse = Awaited<ReturnType<GitHubClient['ListMembersOfTeam']>>;
@@ -172,6 +174,40 @@ export class GitHubClient {
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to set labels on issue\n${error}`);
+        }
+    }
+
+    public async AddLabelsOnIssue(issueNumber: number, labels: string[]) {
+        try {
+            LogDebug(`GitHubClient - AddLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
+
+            const { data } = await this.client.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels
+            });
+
+            return data;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to add labels on issue\n${error}`);
+        }
+    }
+
+    public async AddAssigneesOnIssue(issueNumber: number, assignees: string[]) {
+        try {
+            LogDebug(`GitHubClient - AddAssigneesOnIssue: ${issueNumber}, ${JSON.stringify(assignees)}`);
+
+            const { data } = await this.client.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                assignees
+            });
+
+            return data;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to add assignees on issue\n${error}`);
         }
     }
 

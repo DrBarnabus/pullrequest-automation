@@ -1,3 +1,4 @@
+import { create } from "domain";
 import { PromotePullRequestCommandConfig } from "../Config/Commands/PromotePullRequest";
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogInfo, LogWarning, StartGroup } from "../Core";
 
@@ -10,7 +11,7 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             return false;
         }
 
-        const { triggers, baseRef, headRef, asDraft } = ValidateAndExtractConfig(config);
+        const { triggers, baseRef, headRef, label } = ValidateAndExtractConfig(config);
 
         const normalizedCommentBody = comment.body.toLowerCase();
         const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
@@ -36,9 +37,12 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             }
         }
 
-        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, currentPullRequest.body ?? undefined, asDraft);
-
+        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, currentPullRequest.body ?? undefined, true);
         await GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
+        await GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
+        if (label) {
+            await GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
+        }
 
         await GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
         await GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} on behalf of @${comment.user.login}`);
@@ -79,14 +83,9 @@ function ValidateAndExtractConfig(config: PromotePullRequestCommandConfig) {
         config.baseRef = 'main';
     }
 
-    if (!config.asDraft) {
-        LogInfo(`Config Validation commands.promotePullRequest.createAsDraft, was not supplied setting default of 'true'`);
-        config.asDraft = true;
-    }
-
     if (!isValid) {
         throw new Error('modules.promotePullRequest config failed validation');
     }
 
-    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, asDraft: config.asDraft };
+    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, label: config.label };
 }
