@@ -15,6 +15,7 @@ export type AddLabelsOnIssueResponse = Awaited<ReturnType<GitHubClient['AddLabel
 export type AddAssigneesOnIssueResponse = Awaited<ReturnType<GitHubClient['AddAssigneesOnIssue']>>;
 export type CreateCommentOnIssueResponse = Awaited<ReturnType<GitHubClient['CreateCommentOnIssue']>>;
 export type CreateReactionOnIssueCommentResponse = Awaited<ReturnType<GitHubClient['CreateReactionOnIssueComment']>>;
+export type GetBranchProtectionResponse = Awaited<ReturnType<GitHubClient['GetBranchProtection']>>;
 export type ListMembersOfTeamCommentResponse = Awaited<ReturnType<GitHubClient['ListMembersOfTeam']>>;
 
 export class GitHubClient {
@@ -242,6 +243,22 @@ export class GitHubClient {
             return data;
         } catch (error) {
             throw new Error(`GitHubClient - Unable to create reaction for issue comment\n${error}`);
+        }
+    }
+
+    public async GetBranchProtection(branch: string) {
+        try {
+            LogDebug(`GitHubClient - GetBranchProtection: ${branch}`);
+
+            const { data } = await this.client.rest.repos.getBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch
+            });
+
+            return data;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to get branch protection\n${error}`);
         }
     }
 
