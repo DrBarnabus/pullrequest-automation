@@ -634,6 +634,20 @@ class GitHubClient {
             throw new Error(`GitHubClient - Unable to create reaction for issue comment\n${error}`);
         }
     }
+    async GetBranchProtection(branch) {
+        try {
+            (0, _1.LogDebug)(`GitHubClient - GetBranchProtection: ${branch}`);
+            const { data } = await this.client.rest.repos.getBranchProtection({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                branch
+            });
+            return data;
+        }
+        catch (error) {
+            throw new Error(`GitHubClient - Unable to get branch protection\n${error}`);
+        }
+    }
     async ListMembersOfTeam(teamSlug) {
         try {
             (0, _1.LogDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
@@ -677,6 +691,7 @@ class GitHubClient {
         return getOctokit({
             authStrategy: auth_app_1.createAppAuth,
             auth: {
+                type: 'installation',
                 appId,
                 privateKey,
                 installationId
@@ -27520,9 +27535,11 @@ const MergeSafety_1 = __nccwpck_require__(2978);
 const ReviewerExpander_1 = __nccwpck_require__(6932);
 const PromotePullRequest_1 = __nccwpck_require__(8669);
 async function main() {
-    var _a;
+    var _a, _b;
     try {
         await Core_1.GitHubClient.get().InitializeClient();
+        const protection = await Core_1.GitHubClient.get().GetBranchProtection('main');
+        (0, Core_1.LogInfo)(`Test Count: ${(_a = protection.required_pull_request_reviews) === null || _a === void 0 ? void 0 : _a.required_approving_review_count}`);
         const config = await (0, Config_1.LoadConfig)();
         const eventName = github_1.context.eventName;
         (0, Core_1.LogDebug)(`Workflow triggered by ${eventName}`);
@@ -27533,7 +27550,7 @@ async function main() {
             }
             await ProcessModules(config.modules, github_1.context.payload);
         }
-        else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
+        else if (eventName === 'issue_comment' && ((_b = github_1.context.payload.issue) === null || _b === void 0 ? void 0 : _b.pull_request) != null) {
             if (!(config === null || config === void 0 ? void 0 : config.commands)) {
                 throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
             }

@@ -250,6 +250,22 @@ export class GitHubClient {
         }
     }
 
+    public async GetBranchProtection(branch: string) {
+        try {
+            LogDebug(`GitHubClient - GetBranchProtection: ${branch}`);
+
+            const { data } = await this.client!.rest.repos.getBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch
+            });
+
+            return data;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to get branch protection\n${error}`);
+        }
+    }
+
     public async ListMembersOfTeam(teamSlug: string) {
         try {
             LogDebug(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
@@ -300,6 +316,7 @@ export class GitHubClient {
         return getOctokit({
             authStrategy: createAppAuth,
             auth: {
+                type: 'installation',
                 appId,
                 privateKey,
                 installationId

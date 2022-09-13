@@ -13,6 +13,10 @@ import { ProcessPromotePullRequest } from './Commands/PromotePullRequest';
 async function main() {
     try {
         await GitHubClient.get().InitializeClient();
+        const protection = await GitHubClient.get().GetBranchProtection('main');
+        LogInfo(`Test Count: ${protection.required_pull_request_reviews?.required_approving_review_count}`);
+
+
         const config = await LoadConfig();
 
         const eventName = context.eventName;
