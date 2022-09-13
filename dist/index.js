@@ -432,7 +432,7 @@ __exportStar(__nccwpck_require__(3101), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitHubClient = void 0;
+exports.GitHubClient = exports.ClientStatus = void 0;
 const github_1 = __nccwpck_require__(5438);
 const utils_1 = __nccwpck_require__(3030);
 const auth_app_1 = __nccwpck_require__(7541);
@@ -440,8 +440,15 @@ const _1 = __nccwpck_require__(5782);
 function getOctokit(options) {
     return new utils_1.GitHub(options);
 }
+var ClientStatus;
+(function (ClientStatus) {
+    ClientStatus[ClientStatus["Uninitialized"] = 0] = "Uninitialized";
+    ClientStatus[ClientStatus["InitializedWithToken"] = 1] = "InitializedWithToken";
+    ClientStatus[ClientStatus["InitializedAsGitHubApp"] = 2] = "InitializedAsGitHubApp";
+})(ClientStatus = exports.ClientStatus || (exports.ClientStatus = {}));
 class GitHubClient {
     constructor() {
+        this.clientStatus = ClientStatus.Uninitialized;
     }
     static get() {
         if (!GitHubClient.instance) {
@@ -450,6 +457,9 @@ class GitHubClient {
         return GitHubClient.instance;
     }
     async FetchContent(path, ref) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         ref = ref !== null && ref !== void 0 ? ref : github_1.context.sha;
         try {
             (0, _1.LogDebug)(`GitHubClient - FetchContent: ${path}, ${ref}`);
@@ -470,6 +480,9 @@ class GitHubClient {
         }
     }
     async CompareCommits(base, head) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - CompareCommits: ${base}, ${head}`);
             const { data } = await this.client.rest.repos.compareCommits({
@@ -485,6 +498,9 @@ class GitHubClient {
         }
     }
     async GetPullRequest(pullNumber) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - GetPullRequest: ${pullNumber}`);
             const { data } = await this.client.rest.pulls.get({
@@ -499,6 +515,9 @@ class GitHubClient {
         }
     }
     async CreatePullRequest(head, base, title, body, draft) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - CreatePullRequest: ${head}, ${base}, ${title}, ${draft}, ---\n${body}\n---`);
             const { data } = await this.client.rest.pulls.create({
@@ -517,6 +536,9 @@ class GitHubClient {
         }
     }
     async ListReviewsOnPullRequest(pullNumber) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
             const { data } = await this.client.rest.pulls.listReviews({
@@ -531,6 +553,9 @@ class GitHubClient {
         }
     }
     async RequestReviewersOnPullRequest(pullNumber, reviewers) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
             const { data } = await this.client.rest.pulls.requestReviewers({
@@ -546,6 +571,9 @@ class GitHubClient {
         }
     }
     async ListLabelsOnIssue(issueNumber) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
             const { data } = await this.client.rest.issues.listLabelsOnIssue({
@@ -560,6 +588,9 @@ class GitHubClient {
         }
     }
     async SetLabelsOnIssue(issueNumber, labels) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
             const { data } = await this.client.rest.issues.setLabels({
@@ -575,6 +606,9 @@ class GitHubClient {
         }
     }
     async AddLabelsOnIssue(issueNumber, labels) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - AddLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
             const { data } = await this.client.rest.issues.addLabels({
@@ -590,6 +624,9 @@ class GitHubClient {
         }
     }
     async AddAssigneesOnIssue(issueNumber, assignees) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - AddAssigneesOnIssue: ${issueNumber}, ${JSON.stringify(assignees)}`);
             const { data } = await this.client.rest.issues.addAssignees({
@@ -605,6 +642,9 @@ class GitHubClient {
         }
     }
     async CreateCommentOnIssue(issueNumber, body) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
             const { data } = await this.client.rest.issues.createComment({
@@ -620,6 +660,9 @@ class GitHubClient {
         }
     }
     async CreateReactionOnIssueComment(commentId, content) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
             const { data } = await this.client.rest.reactions.createForIssueComment({
@@ -635,6 +678,9 @@ class GitHubClient {
         }
     }
     async GetBranchProtection(branch) {
+        if (!this.IsInitializedAsGitHubApp()) {
+            throw new Error('Client is not initialized as a GitHub App!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - GetBranchProtection: ${branch}`);
             const { data } = await this.client.rest.repos.getBranchProtection({
@@ -649,6 +695,9 @@ class GitHubClient {
         }
     }
     async ListMembersOfTeam(teamSlug) {
+        if (!this.IsInitializedAsGitHubApp()) {
+            throw new Error('Client is not initialized as a GitHub App!');
+        }
         try {
             (0, _1.LogDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
             const { data } = await this.client.rest.teams.listMembersInOrg({
@@ -666,6 +715,7 @@ class GitHubClient {
         if (token) {
             (0, _1.LogInfo)(`Initializing API via Token using provided 'github-token' value`);
             this.client = getOctokit({ auth: `token ${token}` });
+            this.clientStatus = ClientStatus.InitializedWithToken;
             return;
         }
         const appId = (0, _1.GetInput)('github-app-id', { required: false });
@@ -673,9 +723,22 @@ class GitHubClient {
         if (appId && appKey) {
             (0, _1.LogInfo)(`Initializing API via GitHub App using provided 'github-app-id' and 'github-app-key' values`);
             this.client = await this.InitializeClientViaApp(appId, appKey);
+            this.clientStatus = ClientStatus.InitializedAsGitHubApp;
             return;
         }
         throw new Error(`No other authentication methods are supported yet.`);
+    }
+    IsInitialized() {
+        if (!this.client) {
+            return false;
+        }
+        return this.clientStatus != ClientStatus.Uninitialized;
+    }
+    IsInitializedAsGitHubApp() {
+        if (!this.client) {
+            return false;
+        }
+        return this.clientStatus === ClientStatus.InitializedAsGitHubApp;
     }
     async InitializeClientViaApp(appId, appKey) {
         const privateKey = Buffer.from(appKey, 'base64').toString();
@@ -27535,11 +27598,9 @@ const MergeSafety_1 = __nccwpck_require__(2978);
 const ReviewerExpander_1 = __nccwpck_require__(6932);
 const PromotePullRequest_1 = __nccwpck_require__(8669);
 async function main() {
-    var _a, _b;
+    var _a;
     try {
         await Core_1.GitHubClient.get().InitializeClient();
-        const protection = await Core_1.GitHubClient.get().GetBranchProtection('main');
-        (0, Core_1.LogInfo)(`Test Count: ${(_a = protection.required_pull_request_reviews) === null || _a === void 0 ? void 0 : _a.required_approving_review_count}`);
         const config = await (0, Config_1.LoadConfig)();
         const eventName = github_1.context.eventName;
         (0, Core_1.LogDebug)(`Workflow triggered by ${eventName}`);
@@ -27550,7 +27611,7 @@ async function main() {
             }
             await ProcessModules(config.modules, github_1.context.payload);
         }
-        else if (eventName === 'issue_comment' && ((_b = github_1.context.payload.issue) === null || _b === void 0 ? void 0 : _b.pull_request) != null) {
+        else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
             if (!(config === null || config === void 0 ? void 0 : config.commands)) {
                 throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
             }

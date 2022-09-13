@@ -23,9 +23,17 @@ export type CreateCommentOnIssueResponse = Awaited<ReturnType<GitHubClient['Crea
 export type CreateReactionOnIssueCommentResponse = Awaited<ReturnType<GitHubClient['CreateReactionOnIssueComment']>>;
 export type ListMembersOfTeamCommentResponse = Awaited<ReturnType<GitHubClient['ListMembersOfTeam']>>;
 
+export enum ClientStatus {
+    Uninitialized = 0,
+    InitializedWithToken = 1,
+    InitializedAsGitHubApp = 2
+}
+
 export class GitHubClient {
     private static instance: GitHubClient;
+
     private client: Octokit | undefined;
+    private clientStatus: ClientStatus = ClientStatus.Uninitialized;
 
     private constructor() {
     }
@@ -39,6 +47,10 @@ export class GitHubClient {
     }
 
     public async FetchContent(path: string, ref?: string) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         ref = ref ?? context.sha;
 
         try {
@@ -64,6 +76,10 @@ export class GitHubClient {
     }
 
     public async CompareCommits(base: string, head: string) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - CompareCommits: ${base}, ${head}`);
 
@@ -81,6 +97,10 @@ export class GitHubClient {
     }
 
     public async GetPullRequest(pullNumber: number) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - GetPullRequest: ${pullNumber}`);
 
@@ -97,6 +117,10 @@ export class GitHubClient {
     }
 
     public async CreatePullRequest(head: string, base: string, title: string, body: string | undefined, draft: boolean) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - CreatePullRequest: ${head}, ${base}, ${title}, ${draft}, ---\n${body}\n---`);
 
@@ -117,6 +141,10 @@ export class GitHubClient {
     }
 
     public async ListReviewsOnPullRequest(pullNumber: number) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
 
@@ -133,6 +161,10 @@ export class GitHubClient {
     }
 
     public async RequestReviewersOnPullRequest(pullNumber: number, reviewers: string[]) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
 
@@ -150,6 +182,10 @@ export class GitHubClient {
     }
 
     public async ListLabelsOnIssue(issueNumber: number) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
 
@@ -166,6 +202,10 @@ export class GitHubClient {
     }
 
     public async SetLabelsOnIssue(issueNumber: number, labels: string[]) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
 
@@ -183,6 +223,10 @@ export class GitHubClient {
     }
 
     public async AddLabelsOnIssue(issueNumber: number, labels: string[]) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - AddLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
 
@@ -200,6 +244,10 @@ export class GitHubClient {
     }
 
     public async AddAssigneesOnIssue(issueNumber: number, assignees: string[]) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - AddAssigneesOnIssue: ${issueNumber}, ${JSON.stringify(assignees)}`);
 
@@ -217,6 +265,10 @@ export class GitHubClient {
     }
 
     public async CreateCommentOnIssue(issueNumber: number, body: string) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
 
@@ -234,6 +286,10 @@ export class GitHubClient {
     }
 
     public async CreateReactionOnIssueComment(commentId: number, content: '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes') {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
         try {
             LogDebug(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
 
@@ -251,6 +307,10 @@ export class GitHubClient {
     }
 
     public async GetBranchProtection(branch: string) {
+        if (!this.IsInitializedAsGitHubApp()) {
+            throw new Error('Client is not initialized as a GitHub App!');
+        }
+
         try {
             LogDebug(`GitHubClient - GetBranchProtection: ${branch}`);
 
@@ -267,6 +327,10 @@ export class GitHubClient {
     }
 
     public async ListMembersOfTeam(teamSlug: string) {
+        if (!this.IsInitializedAsGitHubApp()) {
+            throw new Error('Client is not initialized as a GitHub App!');
+        }
+
         try {
             LogDebug(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
 
@@ -286,6 +350,7 @@ export class GitHubClient {
         if (token) {
             LogInfo(`Initializing API via Token using provided 'github-token' value`);
             this.client = getOctokit({ auth: `token ${token}` });
+            this.clientStatus = ClientStatus.InitializedWithToken;
             return;
         }
 
@@ -294,10 +359,27 @@ export class GitHubClient {
         if (appId && appKey) {
             LogInfo(`Initializing API via GitHub App using provided 'github-app-id' and 'github-app-key' values`);
             this.client = await this.InitializeClientViaApp(appId, appKey);
+            this.clientStatus = ClientStatus.InitializedAsGitHubApp;
             return;
         }
 
         throw new Error(`No other authentication methods are supported yet.`);
+    }
+
+    IsInitialized(): boolean {
+        if (!this.client) {
+            return false;
+        }
+
+        return this.clientStatus != ClientStatus.Uninitialized;
+    }
+
+    IsInitializedAsGitHubApp(): boolean {
+        if (!this.client) {
+            return false;
+        }
+
+        return this.clientStatus === ClientStatus.InitializedAsGitHubApp;
     }
 
     private async InitializeClientViaApp(appId: string, appKey: string) {

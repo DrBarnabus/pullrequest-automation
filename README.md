@@ -64,7 +64,9 @@ jobs:
 
 ### Workflow Parameters
 
-- __github-token__ - The GitHub API Token, for example `${{ secrets.GITHUB_TOKEN }}`
+- __github-token__ - The GitHub API Token, for example `${{ secrets.GITHUB_TOKEN }}` when not using GitHub App Impersonation.
+- __github-app-id__ - When using GitHub App Impersonation this must be the ID of the GitHub App provided during registration.
+- __github-app-key__ - When using GitHub App Impersonation this must be a base64 encoded PEM key file with the secret generated for the GitHub App.
 - __config-path__ - Optional override for the path to the config file. Defaults to `.github/pullrequest-automation.yml`
 - __config-ref__ - Optional override for the branch/tag/commit to load the config from. Recommended to set to `main` but defaults to the commit in the PR if not set.
 
