@@ -897,9 +897,9 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             }
             return;
         }
-        const requiredApprovals = ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
+        const requiredApprovals = await ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
         if (requiredApprovals === 0) {
-            (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
+            (0, Core_1.LogWarning)(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
             return;
         }
         const reviewStatus = await GetReviewStatus(pullRequest);
@@ -971,9 +971,14 @@ function EvaluateReviewStatus(reviewStatuses, requiredApprovals) {
     }
     return { totalApproved, isApproved, isRejected };
 }
-function ExtractRequiredApprovals(configRequiredApprovals, pullRequest) {
+async function ExtractRequiredApprovals(configRequiredApprovals, pullRequest) {
+    var _a, _b;
     if (typeof configRequiredApprovals === 'number') {
         return configRequiredApprovals;
+    }
+    if (typeof configRequiredApprovals === 'string') {
+        const branchProtection = await Core_1.GitHubClient.get().GetBranchProtection(pullRequest.base.ref);
+        return (_b = (_a = branchProtection.required_pull_request_reviews) === null || _a === void 0 ? void 0 : _a.required_approving_review_count) !== null && _b !== void 0 ? _b : 0;
     }
     const prBaseRef = pullRequest.base.ref;
     for (const requiredApproval of configRequiredApprovals) {
@@ -995,6 +1000,15 @@ function ValidateAndExtractConfig(config) {
         if (typeof config.requiredApprovals === 'number') {
             if (config.requiredApprovals == 0) {
                 (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                isValid = false;
+            }
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        }
+        else if (typeof config.requiredApprovals === 'string') {
+            if (config.requiredApprovals !== 'smart') {
+                (0, Core_1.LogError)(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be 'smart' when the value is a string`);
                 isValid = false;
             }
             if (isValid) {

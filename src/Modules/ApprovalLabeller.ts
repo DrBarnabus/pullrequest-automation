@@ -24,9 +24,9 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
             return;
         }
 
-        const requiredApprovals = ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
+        const requiredApprovals = await ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
         if (requiredApprovals === 0) {
-            LogInfo(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
+            LogWarning(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
             return;
         }
 
@@ -107,9 +107,14 @@ function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredAppro
     return { totalApproved, isApproved, isRejected };
 }
 
-function ExtractRequiredApprovals(configRequiredApprovals: RequiredApprovals[] | number, pullRequest: GetPullRequestResponse) {
+async function ExtractRequiredApprovals(configRequiredApprovals: RequiredApprovals[] | number | string, pullRequest: GetPullRequestResponse) {
     if (typeof configRequiredApprovals === 'number') {
         return configRequiredApprovals;
+    }
+
+    if (typeof configRequiredApprovals === 'string') {
+        const branchProtection = await GitHubClient.get().GetBranchProtection(pullRequest.base.ref);
+        return branchProtection.required_pull_request_reviews?.required_approving_review_count ?? 0;
     }
 
     const prBaseRef = pullRequest.base.ref;
@@ -126,7 +131,7 @@ function ExtractRequiredApprovals(configRequiredApprovals: RequiredApprovals[] |
 function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
     let isValid = true;
 
-    let requiredApprovals: RequiredApprovals[] | number = 0;
+    let requiredApprovals: RequiredApprovals[] | number | string = 0;
     if (!config.requiredApprovals) {
         LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be number or array`);
         isValid = false;
@@ -134,6 +139,15 @@ function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
         if (typeof config.requiredApprovals === 'number') {
             if (config.requiredApprovals == 0) {
                 LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be greater than or equal to 1`);
+                isValid = false;
+            }
+
+            if (isValid) {
+                requiredApprovals = config.requiredApprovals;
+            }
+        } else if (typeof config.requiredApprovals === 'string') {
+            if (config.requiredApprovals !== 'smart') {
+                LogError(`Config Validation failed modules.approvalLabeller.requiredApprovals, must be 'smart' when the value is a string`);
                 isValid = false;
             }
 

@@ -7,6 +7,6 @@ export interface RequiredApprovals {
 }
 
 export interface ApprovalLabellerModuleConfig extends BaseModuleConfig {
-    requiredApprovals: RequiredApprovals[] | number;
+    requiredApprovals: RequiredApprovals[] | number | string;
     labelsToApply: LabelsToApply;
 }
