@@ -4,7 +4,13 @@ author: DrBarnabus
 inputs:
   github-token:
     description: The secrets.GITHUB_TOKEN for the repo or a valid personal access token with access to the repo
-    required: true
+    required: false
+  github-app-id:
+    description: The ID of your registered GitHub App to impersonate in the action
+    required: false
+  github-app-key:
+    description: The base64 encoded string of the PEM file used to authenticate as the GitHub App to impersonate in the action
+    required: false
   config-path:
     description: The path to the config file
     default: .github/pullrequest-automation.yml

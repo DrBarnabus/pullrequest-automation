@@ -12,6 +12,7 @@ import { ProcessPromotePullRequest } from './Commands/PromotePullRequest';
 
 async function main() {
     try {
+        await GitHubClient.get().InitializeClient();
         const config = await LoadConfig();
 
         const eventName = context.eventName;

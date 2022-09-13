@@ -1,8 +1,14 @@
-import { context, getOctokit } from "@actions/github";
+import { context } from "@actions/github";
+import { GitHub } from "@actions/github/lib/utils";
+import { createAppAuth } from "@octokit/auth-app";
+import { OctokitOptions } from "@octokit/core/dist-types/types";
 import { components } from '@octokit/openapi-types'
-import { GetInput, LogDebug } from ".";
+import { GetInput, LogDebug, LogInfo } from ".";
 
 export type Octokit = ReturnType<typeof getOctokit>;
+function getOctokit(options?: OctokitOptions): InstanceType<typeof GitHub> {
+    return new GitHub(options);
+}
 
 export type CompareCommitsResponse = Awaited<ReturnType<GitHubClient['CompareCommits']>>;
 export type GetPullRequestResponse = Awaited<ReturnType<GitHubClient['GetPullRequest']>>;
@@ -19,10 +25,9 @@ export type ListMembersOfTeamCommentResponse = Awaited<ReturnType<GitHubClient['
 
 export class GitHubClient {
     private static instance: GitHubClient;
-    private client: Octokit;
+    private client: Octokit | undefined;
 
     private constructor() {
-        this.client = this.initializeClient();
     }
 
     public static get(): GitHubClient {
@@ -39,7 +44,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - FetchContent: ${path}, ${ref}`);
 
-            const response = await this.client.rest.repos.getContent({
+            const response = await this.client!.rest.repos.getContent({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 path: path,
@@ -62,7 +67,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - CompareCommits: ${base}, ${head}`);
 
-            const { data } = await this.client.rest.repos.compareCommits({
+            const { data } = await this.client!.rest.repos.compareCommits({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 base,
@@ -79,7 +84,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - GetPullRequest: ${pullNumber}`);
 
-            const { data } = await this.client.rest.pulls.get({
+            const { data } = await this.client!.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: pullNumber
@@ -95,7 +100,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - CreatePullRequest: ${head}, ${base}, ${title}, ${draft}, ---\n${body}\n---`);
 
-            const { data } = await this.client.rest.pulls.create({
+            const { data } = await this.client!.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 head,
@@ -115,7 +120,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - ListReviewsOnPullRequest: ${pullNumber}`);
 
-            const { data } = await this.client.rest.pulls.listReviews({
+            const { data } = await this.client!.rest.pulls.listReviews({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: pullNumber
@@ -131,7 +136,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - RequestReviewersOnPullRequest: ${pullNumber}, ${JSON.stringify(reviewers)}`);
 
-            const { data } = await this.client.rest.pulls.requestReviewers({
+            const { data } = await this.client!.rest.pulls.requestReviewers({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: pullNumber,
@@ -148,7 +153,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - ListLabelsOnIssue: ${issueNumber}`);
 
-            const { data } = await this.client.rest.issues.listLabelsOnIssue({
+            const { data } = await this.client!.rest.issues.listLabelsOnIssue({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber
@@ -164,7 +169,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - SetLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
 
-            const { data } = await this.client.rest.issues.setLabels({
+            const { data } = await this.client!.rest.issues.setLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
@@ -181,7 +186,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - AddLabelsOnIssue: ${issueNumber}, ${JSON.stringify(labels)}`);
 
-            const { data } = await this.client.rest.issues.addLabels({
+            const { data } = await this.client!.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
@@ -198,7 +203,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - AddAssigneesOnIssue: ${issueNumber}, ${JSON.stringify(assignees)}`);
 
-            const { data } = await this.client.rest.issues.addAssignees({
+            const { data } = await this.client!.rest.issues.addAssignees({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
@@ -215,7 +220,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - CreateCommentOnIssue: ${issueNumber}, ---\n${body}\n---`);
 
-            const { data } = await this.client.rest.issues.createComment({
+            const { data } = await this.client!.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
@@ -232,7 +237,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - CreateReactionOnIssueComment: ${commentId}, ${content}`);
 
-            const { data } = await this.client.rest.reactions.createForIssueComment({
+            const { data } = await this.client!.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: commentId,
@@ -249,7 +254,7 @@ export class GitHubClient {
         try {
             LogDebug(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
 
-            const { data } = await this.client.rest.teams.listMembersInOrg({
+            const { data } = await this.client!.rest.teams.listMembersInOrg({
                 org: context.repo.owner,
                 team_slug: teamSlug
             });
@@ -260,8 +265,59 @@ export class GitHubClient {
         }
     }
 
-    private initializeClient() {
-        const token = GetInput('github-token', { required: true });
-        return getOctokit(token);
+    async InitializeClient() {
+        const token = GetInput('github-token', { required: false });
+        if (token) {
+            LogInfo(`Initializing API via Token using provided 'github-token' value`);
+            this.client = getOctokit({ auth: `token ${token}` });
+            return;
+        }
+
+        const appId = GetInput('github-app-id', { required: false });
+        const appKey = GetInput('github-app-key', { required: false });
+        if (appId && appKey) {
+            LogInfo(`Initializing API via GitHub App using provided 'github-app-id' and 'github-app-key' values`);
+            this.client = await this.InitializeClientViaApp(appId, appKey);
+            return;
+        }
+
+        throw new Error(`No other authentication methods are supported yet.`);
+    }
+
+    private async InitializeClientViaApp(appId: string, appKey: string) {
+        const privateKey = Buffer.from(appKey, 'base64').toString();
+        const appClient = getOctokit({
+            authStrategy: createAppAuth,
+            auth: {
+                appId,
+                privateKey
+            }
+        });
+
+        const installationId = await this.GetRepoInstallationId(appClient);
+        LogDebug(`InstallationID is ${installationId}`);
+
+        return getOctokit({
+            authStrategy: createAppAuth,
+            auth: {
+                appId,
+                privateKey,
+                installationId
+            }
+        });
+    }
+
+    private async GetRepoInstallationId(appClient: InstanceType<typeof GitHub>) {
+        try {
+            LogDebug(`GitHubClient - GetRepoInstallationId`);
+            const { data } = await appClient.rest.apps.getRepoInstallation({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+            });
+
+            return data.id;
+        } catch (error) {
+            throw new Error(`GitHubClient - Unable to get repo installation id\n${error}`);
+        }
     }
 }
