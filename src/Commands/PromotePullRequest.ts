@@ -11,7 +11,7 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             return false;
         }
 
-        const { triggers, baseRef, headRef, label } = ValidateAndExtractConfig(config);
+        const { triggers, baseRef, headRef, label, asDraft } = ValidateAndExtractConfig(config);
 
         const normalizedCommentBody = comment.body.toLowerCase();
         const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
@@ -37,7 +37,7 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             }
         }
 
-        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, currentPullRequest.body ?? undefined, true);
+        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, currentPullRequest.body ?? undefined, asDraft);
         await GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
         await GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
         if (label) {
@@ -82,9 +82,14 @@ function ValidateAndExtractConfig(config: PromotePullRequestCommandConfig) {
         config.baseRef = 'main';
     }
 
+    if (!config.asDraft) {
+        LogInfo(`Config Validation commands.promotePullRequest.asDraft, was not supplied setting default of 'false'`);
+        config.asDraft = false;
+    }
+
     if (!isValid) {
         throw new Error('modules.promotePullRequest config failed validation');
     }
 
-    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, label: config.label };
+    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, label: config.label, asDraft: config.asDraft };
 }
