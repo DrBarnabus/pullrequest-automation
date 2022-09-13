@@ -1,12 +1,21 @@
 import { ReviewerExpanderModuleConfig } from "../Config";
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogError, LogInfo, LogWarning, StartGroup } from "../Core"
+import { StateCache } from "../Core/StateCache";
 
-export async function ProcessReviewerExpander(config: ReviewerExpanderModuleConfig | undefined, pullRequest: GetPullRequestResponse) {
+export async function ProcessReviewerExpander(
+    config: ReviewerExpanderModuleConfig | undefined,
+    pullRequest: GetPullRequestResponse,
+    stateCache: StateCache) {
     StartGroup('Modules/ReviewerExpander');
 
     try {
         if (!config?.enabled) {
             LogInfo(`Modules/ReviewerExpander is not enabled. skipping...`);
+            return;
+        }
+
+        if (!stateCache.firstRun) {
+            LogInfo(`Modules/ReviewerExpander not first run. skipping...`);
             return;
         }
 

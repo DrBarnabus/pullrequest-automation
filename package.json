@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/DrBarnabus/pullrequest-automation#readme",
   "dependencies": {
+    "@actions/cache": "^3.0.4",
     "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.3",
     "@octokit/auth-app": "^4.0.5",

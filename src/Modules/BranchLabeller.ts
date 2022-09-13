@@ -1,13 +1,23 @@
 import { BranchLabellerModuleConfig } from "../Config"
 import { EndGroup, GetPullRequestResponse, LogDebug, LogError, LogInfo, StartGroup } from "../Core"
 import { LabelState } from "../Core/LabelState"
+import { HasBaseOrHeadChanged, StateCache } from "../Core/StateCache";
 
-export async function ProcessBranchLabeller(config: BranchLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
+export async function ProcessBranchLabeller(
+    config: BranchLabellerModuleConfig | undefined,
+    pullRequest: GetPullRequestResponse,
+    labelState: LabelState,
+    stateCache: StateCache) {
     StartGroup('Modules/BranchLabeller');
 
     try {
         if (!config?.enabled) {
             LogInfo(`Modules/BranchLabeller is not enabled. skipping...`);
+            return;
+        }
+
+        if (!stateCache.firstRun && !HasBaseOrHeadChanged(stateCache, pullRequest)) {
+            LogInfo(`Modules/BranchLabeller not first run and base/head has not changed. skipping...`);
             return;
         }
 

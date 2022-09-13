@@ -9,6 +9,7 @@ import { LabelState } from './Core/LabelState';
 import { ProcessMergeSafety } from './Commands/MergeSafety';
 import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
 import { ProcessPromotePullRequest } from './Commands/PromotePullRequest';
+import { RestoreStateCache, SaveStateCache } from './Core/StateCache';
 
 async function main() {
     try {
@@ -48,15 +49,18 @@ async function ProcessModules(config: ModuleConfigs, payload: WebhookPayload) {
     const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
     LogInfo(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
 
+    let stateCache = await RestoreStateCache(pullRequest);
+
     const existingLabels = await GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
     const labelState = new LabelState(existingLabels.map((l) => l.name));
 
-    await ProcessApprovalLabeller(config.approvalLabeller, pullRequest, labelState);
-    await ProcessBranchLabeller(config.branchLabeller, pullRequest, labelState);
-    await ProcessReviewerExpander(config.reviewerExpander, pullRequest);
+    await ProcessApprovalLabeller(config.approvalLabeller, pullRequest, labelState, stateCache);
+    await ProcessBranchLabeller(config.branchLabeller, pullRequest, labelState, stateCache);
+    await ProcessReviewerExpander(config.reviewerExpander, pullRequest, stateCache);
 
     await labelState.Apply(pullRequestNumber);
 
+    await SaveStateCache(pullRequestNumber, stateCache);
     LogInfo('Finished processing');
 }
 

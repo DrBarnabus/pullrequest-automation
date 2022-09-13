@@ -1,8 +1,13 @@
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogDebug, LogError, LogInfo, LogWarning, StartGroup } from "../Core";
 import { LabelState } from "../Core/LabelState";
 import { ApprovalLabellerModuleConfig, RequiredApprovals } from "../Config";
+import { HasBaseOrHeadChanged, StateCache } from "../Core/StateCache";
 
-export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConfig | undefined, pullRequest: GetPullRequestResponse, labelState: LabelState) {
+export async function ProcessApprovalLabeller(
+    config: ApprovalLabellerModuleConfig | undefined,
+    pullRequest: GetPullRequestResponse,
+    labelState: LabelState,
+    stateCache: StateCache) {
     StartGroup('Modules/ApprovalLabeller');
 
     try {
@@ -24,7 +29,7 @@ export async function ProcessApprovalLabeller(config: ApprovalLabellerModuleConf
             return;
         }
 
-        const requiredApprovals = await ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
+        const requiredApprovals = await ExtractRequiredApprovals(configRequiredApprovals, pullRequest, stateCache);
         if (requiredApprovals === 0) {
             LogWarning(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
             return;
@@ -107,14 +112,28 @@ function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredAppro
     return { totalApproved, isApproved, isRejected };
 }
 
-async function ExtractRequiredApprovals(configRequiredApprovals: RequiredApprovals[] | number | string, pullRequest: GetPullRequestResponse) {
+async function ExtractRequiredApprovals(
+    configRequiredApprovals: RequiredApprovals[] | number | string,
+    pullRequest: GetPullRequestResponse,
+    stateCache: StateCache) {
+    if (stateCache.branchProtection && !HasBaseOrHeadChanged(stateCache, pullRequest)) {
+        LogDebug(`Loaded RequiredApprovals from StateCache ${stateCache.branchProtection.requiredApprovals}`);
+        return stateCache.branchProtection.requiredApprovals;
+    }
+
     if (typeof configRequiredApprovals === 'number') {
         return configRequiredApprovals;
     }
 
     if (typeof configRequiredApprovals === 'string') {
         const branchProtection = await GitHubClient.get().GetBranchProtection(pullRequest.base.ref);
-        return branchProtection.required_pull_request_reviews?.required_approving_review_count ?? 0;
+        const requiredApprovals = branchProtection.required_pull_request_reviews?.required_approving_review_count ?? 0;
+
+        if (requiredApprovals !== 0) {
+            stateCache.branchProtection = { requiredApprovals };
+        }
+
+        return requiredApprovals;
     }
 
     const prBaseRef = pullRequest.base.ref;
