@@ -1148,14 +1148,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessReviewerExpander = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessReviewerExpander(config, pullRequest) {
-    var _a;
-    (0, Core_1.StartGroup)('Modules/ReviewerExpander');
+    var _a, _b;
+    (0, Core_1.StartGroup)("Modules/ReviewerExpander");
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
             (0, Core_1.LogInfo)(`Modules/ReviewerExpander is not enabled. skipping...`);
             return;
         }
-        if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
+        if (!pullRequest.requested_teams ||
+            pullRequest.requested_teams.length == 0) {
             (0, Core_1.LogInfo)(`Nothing to expand as no requested_teams on the pull request`);
             return;
         }
@@ -1168,7 +1169,8 @@ async function ProcessReviewerExpander(config, pullRequest) {
         let reviewersToRequest = [];
         for (const teamMember of teamMembers) {
             const existingReviewer = (_a = pullRequest.requested_reviewers) === null || _a === void 0 ? void 0 : _a.findIndex((r) => r.login == teamMember.login);
-            if (existingReviewer === -1) {
+            if (existingReviewer === -1 &&
+                ((_b = pullRequest.user) === null || _b === void 0 ? void 0 : _b.login) !== teamMember.login) {
                 reviewersToRequest.push(teamMember.login);
             }
         }
