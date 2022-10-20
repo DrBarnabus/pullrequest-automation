@@ -1,4 +1,3 @@
-import { create } from "domain";
 import { PromotePullRequestCommandConfig } from "../Config/Commands/PromotePullRequest";
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogInfo, LogWarning, StartGroup } from "../Core";
 
@@ -37,16 +36,16 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             }
         }
 
-        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, currentPullRequest.body ?? undefined, asDraft);
-        await GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
+        let body = currentPullRequest.body ?? '';
+        body += `\n\n---\n\nCreated on behalf of @${currentPullRequest.user?.login} from #${currentPullRequest.number}`;
+
+        const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, body, asDraft);
         await GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
         if (label) {
             await GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
         }
 
         await GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
-        await GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} into \`${baseRef}\` on behalf of @${comment.user.login}`);
-
         LogInfo(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
         return true;
     } finally {

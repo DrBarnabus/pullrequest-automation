@@ -127,7 +127,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProcessPromotePullRequest = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
-    var _a;
+    var _a, _b;
     (0, Core_1.StartGroup)('Commands/PromotePullRequest');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
@@ -154,14 +154,14 @@ async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
                 return true;
             }
         }
-        const createdPullRequest = await Core_1.GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, (_a = currentPullRequest.body) !== null && _a !== void 0 ? _a : undefined, asDraft);
-        await Core_1.GitHubClient.get().CreateCommentOnIssue(createdPullRequest.number, `Created on behalf of @${comment.user.login} from #${currentPullRequest.number}`);
+        let body = (_a = currentPullRequest.body) !== null && _a !== void 0 ? _a : '';
+        body += `\n\n---\n\nCreated on behalf of @${(_b = currentPullRequest.user) === null || _b === void 0 ? void 0 : _b.login} from #${currentPullRequest.number}`;
+        const createdPullRequest = await Core_1.GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, body, asDraft);
         await Core_1.GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
         if (label) {
             await Core_1.GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
         }
         await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
-        await Core_1.GitHubClient.get().CreateCommentOnIssue(currentPullRequest.number, `Created #${createdPullRequest.number} into \`${baseRef}\` on behalf of @${comment.user.login}`);
         (0, Core_1.LogInfo)(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
         return true;
     }
