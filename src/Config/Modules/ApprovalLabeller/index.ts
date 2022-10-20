@@ -8,5 +8,6 @@ export interface RequiredApprovals {
 
 export interface ApprovalLabellerModuleConfig extends BaseModuleConfig {
     requiredApprovals: RequiredApprovals[] | number | string;
+    useLegacyMethod?: boolean;
     labelsToApply: LabelsToApply;
 }

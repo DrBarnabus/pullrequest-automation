@@ -181,6 +181,35 @@ export class GitHubClient {
         }
     }
 
+    public async GetPullRequestReviewDecision(pullNumber: number) {
+        if (!this.IsInitialized()) {
+            throw new Error('Client is not initialized!');
+        }
+
+        try {
+            LogDebug(`GitHubClient - GetPullRequestReviewDecision: ${pullNumber}`);
+
+            const { repository } = await this.client!.graphql<{
+                repository: { pullRequest: { reviewDecision: string } }
+            }>(`query getReviewDecision($owner: String!, $repo: String!, $pullNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $pullNumber) {
+                      number
+                      reviewDecision
+                    }
+                  }
+            }`, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pullNumber
+            });
+
+            return repository.pullRequest.reviewDecision;
+        } catch (error) {
+            throw new Error(`GitHubClient - GraphQL Query for GetPullRequestReviewDecision failed\n ${error}`);
+        }
+    }
+
     public async ListLabelsOnIssue(issueNumber: number) {
         if (!this.IsInitialized()) {
             throw new Error('Client is not initialized!');
