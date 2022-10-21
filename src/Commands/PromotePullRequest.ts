@@ -36,11 +36,18 @@ export async function ProcessPromotePullRequest(config: PromotePullRequestComman
             }
         }
 
+        const creatorLogin = currentPullRequest.user?.login;
+
         let body = currentPullRequest.body ?? '';
-        body += `\n\n---\n\nCreated on behalf of @${currentPullRequest.user?.login} from #${currentPullRequest.number}`;
+        if (body !== '') {
+            body += '\n\n---\n\n';
+        }
+        body += `Created on behalf of @${creatorLogin} from #${currentPullRequest.number}`;
 
         const createdPullRequest = await GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, body, asDraft);
-        await GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
+        if (creatorLogin) {
+            await GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [creatorLogin]);
+        }
         if (label) {
             await GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
         }

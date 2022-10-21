@@ -154,10 +154,16 @@ async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
                 return true;
             }
         }
-        let body = (_a = currentPullRequest.body) !== null && _a !== void 0 ? _a : '';
-        body += `\n\n---\n\nCreated on behalf of @${(_b = currentPullRequest.user) === null || _b === void 0 ? void 0 : _b.login} from #${currentPullRequest.number}`;
+        const creatorLogin = (_a = currentPullRequest.user) === null || _a === void 0 ? void 0 : _a.login;
+        let body = (_b = currentPullRequest.body) !== null && _b !== void 0 ? _b : '';
+        if (body !== '') {
+            body += '\n\n---\n\n';
+        }
+        body += `Created on behalf of @${creatorLogin} from #${currentPullRequest.number}`;
         const createdPullRequest = await Core_1.GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, body, asDraft);
-        await Core_1.GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [comment.user.login]);
+        if (creatorLogin) {
+            await Core_1.GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [creatorLogin]);
+        }
         if (label) {
             await Core_1.GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
         }
