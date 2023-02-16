@@ -1,4 +1,3 @@
-import { BaseModuleConfig } from "../BaseModuleConfig";
+import { BaseModuleConfig } from '../BaseModuleConfig';
 
-export interface ReviewerExpanderModuleConfig extends BaseModuleConfig {
-}
+export interface ReviewerExpanderModuleConfig extends BaseModuleConfig {}

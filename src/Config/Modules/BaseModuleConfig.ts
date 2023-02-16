@@ -1,3 +1,3 @@
 export interface BaseModuleConfig {
-    enabled?: boolean;
+  enabled?: boolean;
 }

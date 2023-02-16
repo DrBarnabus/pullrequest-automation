@@ -1,6 +1,6 @@
 export interface LabelsToApply {
-    approved: string;
-    rejected: string;
-    needsReview: string;
-    draft?: string;
+  approved: string;
+  rejected: string;
+  needsReview: string;
+  draft?: string;
 }

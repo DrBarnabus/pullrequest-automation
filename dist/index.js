@@ -1,286 +1,6 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 2978:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ProcessMergeSafety = void 0;
-const Core_1 = __nccwpck_require__(5782);
-async function ProcessMergeSafety(config, pullRequest, comment) {
-    (0, Core_1.StartGroup)('Commands/MergeSafety');
-    try {
-        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.LogInfo)('Commands/MergeSafety is not enabled, skipping...');
-            return false;
-        }
-        const { triggers, branchesToProtect } = ValidateAndExtractConfig(config);
-        const normalizedCommentBody = comment.body.toLowerCase();
-        const prBaseRef = pullRequest.base.ref;
-        const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
-        if (!triggered) {
-            (0, Core_1.LogInfo)(`Commands/MergeSafety has not been triggered`);
-            return false;
-        }
-        const branchToProtect = MatchBranchToProtect(branchesToProtect, prBaseRef);
-        ;
-        if (!branchToProtect) {
-            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-            (0, Core_1.LogWarning)(`Commands/MergeSafety was triggered but protection was not configured for Pull Request baseRef ${prBaseRef}`);
-            return true;
-        }
-        const compareResponse = await Core_1.GitHubClient.get().CompareCommits(branchToProtect.comparisonBaseRef, branchToProtect.comparisonHeadRef);
-        if (compareResponse.ahead_by >= 1) {
-            let body = ConstructChangesCommentBody(branchToProtect, compareResponse);
-            await Core_1.GitHubClient.get().CreateCommentOnIssue(pullRequest.number, body);
-            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, '-1');
-        }
-        else {
-            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, '+1');
-        }
-        return true;
-    }
-    finally {
-        (0, Core_1.EndGroup)();
-    }
-}
-exports.ProcessMergeSafety = ProcessMergeSafety;
-function ConstructChangesCommentBody(branchToProtect, response) {
-    var _a, _b;
-    let body = `## Outstanding changes in [${branchToProtect.comparisonHeadRef}](${response.html_url})`;
-    body += `\n\n<details>\n<summary>View Changes</summary>\n\n`;
-    for (const commit of response.commits) {
-        body += `- ${commit.commit.message} [${commit.sha.substring(0, 7)}](${commit.html_url}) by [${(_a = commit.committer) === null || _a === void 0 ? void 0 : _a.login}](${(_b = commit.committer) === null || _b === void 0 ? void 0 : _b.html_url})\n`;
-    }
-    body += `\n</details>`;
-    return body;
-}
-function CheckIfTriggered(normalizedCommentBody, triggers) {
-    if (typeof triggers === 'string') {
-        return normalizedCommentBody.includes(triggers.toLowerCase());
-    }
-    else if (Array.isArray(triggers)) {
-        for (const trigger of triggers) {
-            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
-            if (triggered) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-function MatchBranchToProtect(branchesToProtect, prBaseRef) {
-    for (const branchToProtect of branchesToProtect) {
-        if (branchToProtect.baseRef === prBaseRef) {
-            return branchToProtect;
-        }
-    }
-    return null;
-}
-function ValidateAndExtractConfig(config) {
-    let isValid = true;
-    if (!config.triggers) {
-        (0, Core_1.LogInfo)(`Config Validation commands.mergeSafety.triggers, was empty setting default of 'Safe to merge?'`);
-        config.triggers = 'Safe to merge?';
-    }
-    if (!config.branchesToProtect) {
-        (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect, at least one branch to protect must be supplied`);
-        isValid = false;
-    }
-    const branchesToProtect = config.branchesToProtect;
-    for (let i = 0; i < branchesToProtect.length; i++) {
-        const branchToProtect = branchesToProtect[i];
-        if (!branchToProtect.baseRef) {
-            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].baseRef, must be supplied`);
-            isValid = false;
-        }
-        if (!branchToProtect.comparisonBaseRef) {
-            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must be supplied`);
-            isValid = false;
-        }
-        if (!branchToProtect.comparisonHeadRef) {
-            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonHeadRef, must be supplied`);
-            isValid = false;
-        }
-        if (branchToProtect.comparisonBaseRef === branchToProtect.comparisonHeadRef) {
-            (0, Core_1.LogError)(`Config Validation failed commands.mergeSafety.branchesToProtect[${i}].comparisonBaseRef, must not match comparisonHeadRef`);
-            isValid = false;
-        }
-    }
-    if (!isValid) {
-        throw new Error('modules.branchLabeller config failed validation');
-    }
-    return { triggers: config.triggers, branchesToProtect };
-}
-
-
-/***/ }),
-
-/***/ 8669:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ProcessPromotePullRequest = void 0;
-const Core_1 = __nccwpck_require__(5782);
-async function ProcessPromotePullRequest(config, currentPullRequest, comment) {
-    var _a, _b;
-    (0, Core_1.StartGroup)('Commands/PromotePullRequest');
-    try {
-        if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
-            (0, Core_1.LogInfo)('Commands/PromotePullRequest is not enabled, skipping...');
-            return false;
-        }
-        const { triggers, baseRef, headRef, label, asDraft } = ValidateAndExtractConfig(config);
-        const normalizedCommentBody = comment.body.toLowerCase();
-        const triggered = CheckIfTriggered(normalizedCommentBody, triggers);
-        if (!triggered) {
-            (0, Core_1.LogInfo)(`Commands/PromotePullRequest has not been triggered`);
-            return false;
-        }
-        if (!currentPullRequest.merged) {
-            await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-            (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has not been merged yet so no action can be taken`);
-            return true;
-        }
-        if (headRef) {
-            const headRefExpression = new RegExp(`^${headRef}$`);
-            if (!headRefExpression.test(currentPullRequest.base.ref)) {
-                await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'confused');
-                (0, Core_1.LogWarning)(`Commands/PromotePullRequest was triggered but the pull request has a base of ${currentPullRequest.base.ref} which does not match expression ${headRef}`);
-                return true;
-            }
-        }
-        const creatorLogin = (_a = currentPullRequest.user) === null || _a === void 0 ? void 0 : _a.login;
-        let body = (_b = currentPullRequest.body) !== null && _b !== void 0 ? _b : '';
-        if (body !== '') {
-            body += '\n\n---\n\n';
-        }
-        body += `Created on behalf of @${creatorLogin} from #${currentPullRequest.number}`;
-        const createdPullRequest = await Core_1.GitHubClient.get().CreatePullRequest(currentPullRequest.base.ref, baseRef, currentPullRequest.title, body, asDraft);
-        if (creatorLogin) {
-            await Core_1.GitHubClient.get().AddAssigneesOnIssue(createdPullRequest.number, [creatorLogin]);
-        }
-        if (label) {
-            await Core_1.GitHubClient.get().AddLabelsOnIssue(createdPullRequest.number, [label]);
-        }
-        await Core_1.GitHubClient.get().CreateReactionOnIssueComment(comment.id, 'rocket');
-        (0, Core_1.LogInfo)(`Commands/PromotePullRequest was triggered and #${createdPullRequest.number} was created for the user ${comment.user.login}`);
-        return true;
-    }
-    finally {
-        (0, Core_1.EndGroup)();
-    }
-}
-exports.ProcessPromotePullRequest = ProcessPromotePullRequest;
-function CheckIfTriggered(normalizedCommentBody, triggers) {
-    if (typeof triggers === 'string') {
-        return normalizedCommentBody.includes(triggers.toLowerCase());
-    }
-    else if (Array.isArray(triggers)) {
-        for (const trigger of triggers) {
-            const triggered = normalizedCommentBody.includes(trigger.toLowerCase());
-            if (triggered) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-function ValidateAndExtractConfig(config) {
-    let isValid = true;
-    if (!config.triggers) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.triggers, was empty setting default of 'Promote to main!'`);
-        config.triggers = 'Promote to main!';
-    }
-    if (!config.baseRef) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.base, was not supplied setting default of 'main'`);
-        config.baseRef = 'main';
-    }
-    if (!config.asDraft) {
-        (0, Core_1.LogInfo)(`Config Validation commands.promotePullRequest.asDraft, was not supplied setting default of 'false'`);
-        config.asDraft = false;
-    }
-    if (!isValid) {
-        throw new Error('modules.promotePullRequest config failed validation');
-    }
-    return { triggers: config.triggers, baseRef: config.baseRef, headRef: config.headRef, label: config.label, asDraft: config.asDraft };
-}
-
-
-/***/ }),
-
-/***/ 1211:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 7763:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 2116:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 4099:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 970:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(1211), exports);
-__exportStar(__nccwpck_require__(7763), exports);
-__exportStar(__nccwpck_require__(2116), exports);
-__exportStar(__nccwpck_require__(4099), exports);
-
-
-/***/ }),
-
 /***/ 7949:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -430,7 +150,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(7949), exports);
 __exportStar(__nccwpck_require__(8795), exports);
-__exportStar(__nccwpck_require__(970), exports);
 __exportStar(__nccwpck_require__(3101), exports);
 
 
@@ -477,7 +196,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 path: path,
-                ref: ref
+                ref: ref,
             });
             if (Array.isArray(response.data)) {
                 throw new Error('response contained a directory not a file');
@@ -499,7 +218,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 base,
-                head
+                head,
             });
             return data;
         }
@@ -516,7 +235,7 @@ class GitHubClient {
             const { data } = await this.client.rest.pulls.get({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
-                pull_number: pullNumber
+                pull_number: pullNumber,
             });
             return data;
         }
@@ -537,7 +256,7 @@ class GitHubClient {
                 base,
                 title,
                 body,
-                draft
+                draft,
             });
             return data;
         }
@@ -554,7 +273,7 @@ class GitHubClient {
             const { data } = await this.client.rest.pulls.listReviews({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
-                pull_number: pullNumber
+                pull_number: pullNumber,
             });
             return data;
         }
@@ -572,7 +291,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 pull_number: pullNumber,
-                reviewers
+                reviewers,
             });
             return data;
         }
@@ -596,7 +315,7 @@ class GitHubClient {
             }`, {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
-                pullNumber
+                pullNumber,
             });
             return repository.pullRequest.reviewDecision;
         }
@@ -613,7 +332,7 @@ class GitHubClient {
             const { data } = await this.client.rest.issues.listLabelsOnIssue({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
-                issue_number: issueNumber
+                issue_number: issueNumber,
             });
             return data;
         }
@@ -631,7 +350,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 issue_number: issueNumber,
-                labels
+                labels,
             });
             return data;
         }
@@ -649,7 +368,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 issue_number: issueNumber,
-                labels
+                labels,
             });
             return data;
         }
@@ -667,7 +386,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 issue_number: issueNumber,
-                assignees
+                assignees,
             });
             return data;
         }
@@ -685,7 +404,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 issue_number: issueNumber,
-                body
+                body,
             });
             return data;
         }
@@ -703,7 +422,7 @@ class GitHubClient {
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
                 comment_id: commentId,
-                content
+                content,
             });
             return data;
         }
@@ -720,7 +439,7 @@ class GitHubClient {
             const { data } = await this.client.rest.repos.getBranchProtection({
                 owner: github_1.context.repo.owner,
                 repo: github_1.context.repo.repo,
-                branch
+                branch,
             });
             return data;
         }
@@ -736,7 +455,7 @@ class GitHubClient {
             (0, _1.LogDebug)(`GitHubClient - ListMembersOfTeam: ${teamSlug}`);
             const { data } = await this.client.rest.teams.listMembersInOrg({
                 org: github_1.context.repo.owner,
-                team_slug: teamSlug
+                team_slug: teamSlug,
             });
             return data;
         }
@@ -780,8 +499,8 @@ class GitHubClient {
             authStrategy: auth_app_1.createAppAuth,
             auth: {
                 appId,
-                privateKey
-            }
+                privateKey,
+            },
         });
         const installationId = await this.GetRepoInstallationId(appClient);
         (0, _1.LogDebug)(`InstallationID is ${installationId}`);
@@ -791,8 +510,8 @@ class GitHubClient {
                 type: 'installation',
                 appId,
                 privateKey,
-                installationId
-            }
+                installationId,
+            },
         });
     }
     async GetRepoInstallationId(appClient) {
@@ -800,7 +519,7 @@ class GitHubClient {
             (0, _1.LogDebug)(`GitHubClient - GetRepoInstallationId`);
             const { data } = await appClient.rest.apps.getRepoInstallation({
                 owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo
+                repo: github_1.context.repo.repo,
             });
             return data.id;
         }
@@ -916,7 +635,7 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
             (0, Core_1.LogInfo)(`Modules/ApprovalLabeller is not enabled. skipping...`);
             return;
         }
-        const { requiredApprovals: configRequiredApprovals, labelsToApply, useLegacyMethod } = ValidateAndExtractConfig(config);
+        const { requiredApprovals: configRequiredApprovals, labelsToApply, useLegacyMethod, } = ValidateAndExtractConfig(config);
         if (pullRequest.state === 'closed') {
             (0, Core_1.LogInfo)(`Pull request is closed`);
             removeExistingLabels(labelState, labelsToApply);
@@ -936,7 +655,7 @@ async function ProcessApprovalLabeller(config, pullRequest, labelState) {
         let isApproved;
         let isRejected;
         if (useLegacyMethod) {
-            (0, Core_1.LogWarning)("Using Legacy Method to determine Pull Request Approval");
+            (0, Core_1.LogWarning)('Using Legacy Method to determine Pull Request Approval');
             const requiredApprovals = await ExtractRequiredApprovals(configRequiredApprovals, pullRequest);
             if (requiredApprovals === 0) {
                 (0, Core_1.LogWarning)(`Modules/ApprovalLabeller is enabled but not configured for branch ${pullRequest.base.ref}`);
@@ -1206,14 +925,13 @@ exports.ProcessReviewerExpander = void 0;
 const Core_1 = __nccwpck_require__(5782);
 async function ProcessReviewerExpander(config, pullRequest) {
     var _a, _b;
-    (0, Core_1.StartGroup)("Modules/ReviewerExpander");
+    (0, Core_1.StartGroup)('Modules/ReviewerExpander');
     try {
         if (!(config === null || config === void 0 ? void 0 : config.enabled)) {
             (0, Core_1.LogInfo)(`Modules/ReviewerExpander is not enabled. skipping...`);
             return;
         }
-        if (!pullRequest.requested_teams ||
-            pullRequest.requested_teams.length == 0) {
+        if (!pullRequest.requested_teams || pullRequest.requested_teams.length == 0) {
             (0, Core_1.LogInfo)(`Nothing to expand as no requested_teams on the pull request`);
             return;
         }
@@ -1226,8 +944,7 @@ async function ProcessReviewerExpander(config, pullRequest) {
         let reviewersToRequest = [];
         for (const teamMember of teamMembers) {
             const existingReviewer = (_a = pullRequest.requested_reviewers) === null || _a === void 0 ? void 0 : _a.findIndex((r) => r.login == teamMember.login);
-            if (existingReviewer === -1 &&
-                ((_b = pullRequest.user) === null || _b === void 0 ? void 0 : _b.login) !== teamMember.login) {
+            if (existingReviewer === -1 && ((_b = pullRequest.user) === null || _b === void 0 ? void 0 : _b.login) !== teamMember.login) {
                 reviewersToRequest.push(teamMember.login);
             }
         }
@@ -44204,9 +43921,7 @@ const BranchLabeller_1 = __nccwpck_require__(5497);
 const Config_1 = __nccwpck_require__(6358);
 const Core_1 = __nccwpck_require__(5782);
 const LabelState_1 = __nccwpck_require__(6207);
-const MergeSafety_1 = __nccwpck_require__(2978);
 const ReviewerExpander_1 = __nccwpck_require__(6932);
-const PromotePullRequest_1 = __nccwpck_require__(8669);
 async function main() {
     var _a;
     try {
@@ -44222,10 +43937,7 @@ async function main() {
             await ProcessModules(config.modules, github_1.context.payload);
         }
         else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
-            if (!(config === null || config === void 0 ? void 0 : config.commands)) {
-                throw new Error(`Config Validation failed commands, must be supplied when handling issue_comment events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
-            }
-            await ProcessCommands(config.commands, github_1.context.payload);
+            throw new Error('Commands are temporarily unavailable in vNext, they are being re-implemented');
         }
         else {
             throw new Error('Unable to determine correct action based on triggering event');
@@ -44249,27 +43961,6 @@ async function ProcessModules(config, payload) {
     await (0, BranchLabeller_1.ProcessBranchLabeller)(config.branchLabeller, pullRequest, labelState);
     await (0, ReviewerExpander_1.ProcessReviewerExpander)(config.reviewerExpander, pullRequest);
     await labelState.Apply(pullRequestNumber);
-    (0, Core_1.LogInfo)('Finished processing');
-}
-async function ProcessCommands(config, payload) {
-    var _a, _b;
-    if (!payload.comment) {
-        throw new Error(`Unable to extract comment from context payload`);
-    }
-    if (!((_a = payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request)) {
-        throw new Error(`Unable to extract issue.pull_request from context payload`);
-    }
-    const comment = payload.comment;
-    (0, Core_1.LogInfo)(`Processing comment ${comment.html_url}`);
-    (0, Core_1.LogDebug)(`Comment body:\n${comment.body}`);
-    const pullRequestNumber = (_b = payload.issue) === null || _b === void 0 ? void 0 : _b.number;
-    if (!pullRequestNumber) {
-        throw new Error('Unable to determine pull request number from context');
-    }
-    const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
-    (0, Core_1.LogInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
-    await (0, MergeSafety_1.ProcessMergeSafety)(config.mergeSafety, pullRequest, comment);
-    await (0, PromotePullRequest_1.ProcessPromotePullRequest)(config.promotePullRequest, pullRequest, comment);
     (0, Core_1.LogInfo)('Finished processing');
 }
 main();

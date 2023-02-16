@@ -1,5 +1,5 @@
 export interface Rule {
-    baseRef: string;
-    headRef?: string;
-    labelToApply: string;
+  baseRef: string;
+  headRef?: string;
+  labelToApply: string;
 }

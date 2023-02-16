@@ -1,0 +1,8 @@
+.github
+.husky
+dist
+lib
+node_modules
+package-lock.json
+tsconfig.json
+*.md
