@@ -1,49 +1,49 @@
 {
-  "name": "@drbarnabus/pullrequest-automation",
-  "version": "3.3.0",
-  "description": "A GitHub Action to automate a number of common pull request tasks in a GitHub Repository.",
-  "main": "lib/main.js",
-  "scripts": {
-    "prebuild": "rm -rf dist && rm -rf lib",
-    "build": "npm run prebuild && tsc && ncc build lib/main.js",
-    "prepare": "husky install"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DrBarnabus/github-pullrequest-automation.git"
-  },
-  "keywords": [
-    "GitHub Actions",
-    "GitHub",
-    "Actions",
-    "Pull Request",
-    "Pull",
-    "Request",
-    "Automation",
-    "Labeller",
-    "Approval",
-    "Approval Labeller"
-  ],
-  "author": "DrBarnabus",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/DrBarnabus/pullrequest-automation/issues"
-  },
-  "homepage": "https://github.com/DrBarnabus/pullrequest-automation#readme",
-  "dependencies": {
-    "@actions/core": "^1.9.1",
-    "@actions/github": "^5.0.3",
-    "@octokit/auth-app": "^4.0.5",
-    "@octokit/core": "^4.0.5",
-    "@octokit/plugin-paginate-rest": "^4.3.0",
-    "@octokit/plugin-rest-endpoint-methods": "^6.6.0",
-    "yaml": "^2.1.1"
-  },
-  "devDependencies": {
-    "@octokit/types": "^7.1.1",
-    "@types/node": "^18.7.13",
-    "@vercel/ncc": "^0.34.0",
-    "husky": "^8.0.0",
-    "typescript": "^4.8.2"
-  }
+    "name": "@drbarnabus/pullrequest-automation",
+    "version": "next",
+    "description": "A GitHub Action to automate a number of common pull request tasks in a GitHub Repository.",
+    "main": "lib/main.js",
+    "scripts": {
+        "prebuild": "rm -rf dist && rm -rf lib",
+        "build": "npm run prebuild && tsc && ncc build lib/main.js",
+        "prepare": "husky install"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DrBarnabus/github-pullrequest-automation.git"
+    },
+    "keywords": [
+        "GitHub Actions",
+        "GitHub",
+        "Actions",
+        "Pull Request",
+        "Pull",
+        "Request",
+        "Automation",
+        "Labeller",
+        "Approval",
+        "Approval Labeller"
+    ],
+    "author": "DrBarnabus",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/DrBarnabus/pullrequest-automation/issues"
+    },
+    "homepage": "https://github.com/DrBarnabus/pullrequest-automation#readme",
+    "dependencies": {
+        "@actions/core": "^1.9.1",
+        "@actions/github": "^5.0.3",
+        "@octokit/auth-app": "^4.0.5",
+        "@octokit/core": "^4.0.5",
+        "@octokit/plugin-paginate-rest": "^4.3.0",
+        "@octokit/plugin-rest-endpoint-methods": "^6.6.0",
+        "yaml": "^2.1.1"
+    },
+    "devDependencies": {
+        "@octokit/types": "^7.1.1",
+        "@types/node": "^18.7.13",
+        "@vercel/ncc": "^0.34.0",
+        "husky": "^8.0.0",
+        "typescript": "^4.8.2"
+    }
 }
