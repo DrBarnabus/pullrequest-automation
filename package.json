@@ -5,8 +5,9 @@
   "main": "lib/main.js",
   "scripts": {
     "prebuild": "rm -rf dist && rm -rf lib",
-    "build": "npm run prebuild && tsc && ncc build lib/main.js",
-    "prepare": "husky install"
+    "build": "tsc && ncc build lib/main.js",
+    "prepare": "husky install",
+    "tsc": "tsc"
   },
   "repository": {
     "type": "git",
@@ -31,19 +32,20 @@
   },
   "homepage": "https://github.com/DrBarnabus/pullrequest-automation#readme",
   "dependencies": {
-    "@actions/core": "^1.9.1",
-    "@actions/github": "^5.0.3",
-    "@octokit/auth-app": "^4.0.5",
-    "@octokit/core": "^4.0.5",
-    "@octokit/plugin-paginate-rest": "^4.3.0",
-    "@octokit/plugin-rest-endpoint-methods": "^6.6.0",
-    "yaml": "^2.1.1"
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
+    "@octokit/auth-app": "^4.0.9",
+    "@octokit/core": "^4.2.0",
+    "@octokit/plugin-paginate-rest": "^6.0.0",
+    "@octokit/plugin-rest-endpoint-methods": "^7.0.1",
+    "yaml": "^2.2.1",
+    "zod": "^3.20.6"
   },
   "devDependencies": {
-    "@octokit/types": "^7.1.1",
-    "@types/node": "^18.7.13",
-    "@vercel/ncc": "^0.34.0",
-    "husky": "^8.0.0",
-    "typescript": "^4.8.2"
+    "@octokit/types": "^9.0.0",
+    "@types/node": "^18.13.0",
+    "@vercel/ncc": "^0.36.1",
+    "husky": "^8.0.3",
+    "typescript": "^4.9.5"
   }
 }

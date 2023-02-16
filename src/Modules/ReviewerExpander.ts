@@ -1,8 +1,8 @@
-import { ReviewerExpanderModuleConfig } from '../Config';
+import { ReviewerExpander } from '../Config/ConfigSchema';
 import { EndGroup, GetPullRequestResponse, GitHubClient, LogError, LogInfo, LogWarning, StartGroup } from '../Core';
 
 export async function ProcessReviewerExpander(
-  config: ReviewerExpanderModuleConfig | undefined,
+  config: ReviewerExpander | undefined,
   pullRequest: GetPullRequestResponse
 ) {
   StartGroup('Modules/ReviewerExpander');

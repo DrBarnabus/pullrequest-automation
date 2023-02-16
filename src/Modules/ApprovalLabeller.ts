@@ -1,3 +1,4 @@
+import { ApprovalLabeller, LabelsToApply, RequiredApprovals } from '../Config/ConfigSchema';
 import {
   EndGroup,
   GetPullRequestResponse,
@@ -9,11 +10,9 @@ import {
   StartGroup,
 } from '../Core';
 import { LabelState } from '../Core/LabelState';
-import { ApprovalLabellerModuleConfig, RequiredApprovals } from '../Config';
-import { LabelsToApply } from '../Config/Modules/ApprovalLabeller/LabelsToApply';
 
 export async function ProcessApprovalLabeller(
-  config: ApprovalLabellerModuleConfig | undefined,
+  config: ApprovalLabeller | undefined,
   pullRequest: GetPullRequestResponse,
   labelState: LabelState
 ) {
@@ -149,7 +148,7 @@ function EvaluateReviewStatus(reviewStatuses: Map<string, string>, requiredAppro
 }
 
 async function ExtractRequiredApprovals(
-  configRequiredApprovals: RequiredApprovals[] | number | string,
+  configRequiredApprovals: RequiredApprovals,
   pullRequest: GetPullRequestResponse
 ) {
   if (typeof configRequiredApprovals === 'number') {
@@ -182,13 +181,13 @@ function removeExistingLabels(labelState: LabelState, labelsToApply: LabelsToApp
   }
 }
 
-function ValidateAndExtractConfig(config: ApprovalLabellerModuleConfig) {
+function ValidateAndExtractConfig(config: ApprovalLabeller) {
   let isValid = true;
 
   const isGitHubApp = GitHubClient.get().IsInitializedAsGitHubApp();
   let useLegacyMethod = config?.useLegacyMethod ?? !isGitHubApp;
 
-  let requiredApprovals: RequiredApprovals[] | number | string = 0;
+  let requiredApprovals: RequiredApprovals = 0;
 
   if (useLegacyMethod) {
     if (!config.requiredApprovals) {

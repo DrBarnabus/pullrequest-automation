@@ -2,11 +2,11 @@ import { context } from '@actions/github';
 import { WebhookPayload } from '@actions/github/lib/interfaces';
 import { ProcessApprovalLabeller } from './Modules/ApprovalLabeller';
 import { ProcessBranchLabeller } from './Modules/BranchLabeller';
-import { ModuleConfigs } from './Config';
-import { LoadConfig } from './Config';
+import { LoadConfig } from './Config/LoadConfig';
 import { GitHubClient, LogDebug, LogInfo, SetFailed } from './Core';
 import { LabelState } from './Core/LabelState';
 import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
+import { Modules } from './Config/ConfigSchema';
 
 async function main() {
   try {
@@ -35,7 +35,7 @@ async function main() {
   }
 }
 
-async function ProcessModules(config: ModuleConfigs, payload: WebhookPayload) {
+async function ProcessModules(config: Modules, payload: WebhookPayload) {
   const pullRequestNumber = payload.pull_request?.number;
   if (!pullRequestNumber) {
     throw new Error('Unable to determine pull request number from context');

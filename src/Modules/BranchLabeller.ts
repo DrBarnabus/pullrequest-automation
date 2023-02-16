@@ -1,9 +1,9 @@
-import { BranchLabellerModuleConfig } from '../Config';
+import { BranchLabeller } from '../Config/ConfigSchema';
 import { EndGroup, GetPullRequestResponse, LogDebug, LogError, LogInfo, StartGroup } from '../Core';
 import { LabelState } from '../Core/LabelState';
 
 export async function ProcessBranchLabeller(
-  config: BranchLabellerModuleConfig | undefined,
+  config: BranchLabeller | undefined,
   pullRequest: GetPullRequestResponse,
   labelState: LabelState
 ) {
@@ -59,7 +59,7 @@ function CheckIfApplies(prBaseRef: string, prHeadRef: string, baseRef: string, h
   return true;
 }
 
-function ValidateAndExtractConfig(config: BranchLabellerModuleConfig) {
+function ValidateAndExtractConfig(config: BranchLabeller) {
   let isValid = true;
 
   if (!config.rules || config.rules.length == 0) {
