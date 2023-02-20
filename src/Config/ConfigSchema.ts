@@ -1,14 +1,17 @@
 import { z } from 'zod';
 
 export type RequiredApprovals = z.infer<typeof RequiredApprovalsSchema>;
-const RequiredApprovalsSchema = z.union([
-  z.number(),
-  z.string(),
-  z.object({ baseRef: z.string(), requiredApprovals: z.number() }).array(),
+export const RequiredApprovalsSchema = z.union([
+  z.number().gte(1),
+  z.literal('smart'),
+  z
+    .object({ baseRef: z.string(), requiredApprovals: z.number().gte(1) })
+    .array()
+    .nonempty(),
 ]);
 
 export type LabelsToApply = z.infer<typeof LabelsToApplySchema>;
-const LabelsToApplySchema = z.object({
+export const LabelsToApplySchema = z.object({
   approved: z.string(),
   rejected: z.string(),
   needsReview: z.string(),
@@ -17,39 +20,48 @@ const LabelsToApplySchema = z.object({
 
 export type ApprovalLabeller = z.infer<typeof ApprovalLabellerSchema>;
 const ApprovalLabellerSchema = z.object({
-  enabled: z.boolean(),
+  enabled: z.literal(true),
   requiredApprovals: RequiredApprovalsSchema,
   useLegacyMethod: z.boolean().optional(),
   labelsToApply: LabelsToApplySchema,
 });
 
+export type ApprovalLabellerModule = z.infer<typeof ApprovalLabellerModuleSchema>;
+export const ApprovalLabellerModuleSchema = z.discriminatedUnion('enabled', [
+  z.object({ enabled: z.literal(false) }),
+  ApprovalLabellerSchema,
+]);
+
 export type BranchLabeller = z.infer<typeof BranchLabellerSchema>;
-const BranchLabellerSchema = z.object({
-  enabled: z.boolean(),
-  rules: z
-    .object({
-      baseRef: z.string(),
-      headRef: z.string().optional(),
-      labelToApply: z.string(),
-    })
-    .array()
-    .nonempty(),
-});
+export const BranchLabellerSchema = z.discriminatedUnion('enabled', [
+  z.object({ enabled: z.literal(false) }),
+  z.object({
+    enabled: z.literal(true),
+    rules: z
+      .object({
+        baseRef: z.string(),
+        headRef: z.string().optional(),
+        labelToApply: z.string(),
+      })
+      .array()
+      .nonempty(),
+  }),
+]);
 
 export type ReviewerExpander = z.infer<typeof ReviewerExpanderSchema>;
-const ReviewerExpanderSchema = z.object({
+export const ReviewerExpanderSchema = z.object({
   enabled: z.boolean(),
 });
 
 export type Modules = z.infer<typeof ModulesSchema>;
-const ModulesSchema = z.object({
-  approvalLabeller: ApprovalLabellerSchema.optional(),
+export const ModulesSchema = z.object({
+  approvalLabeller: ApprovalLabellerModuleSchema.optional(),
   branchLabeller: BranchLabellerSchema.optional(),
   reviewerExpander: ReviewerExpanderSchema.optional(),
 });
 
 export type CheckForMergeConflictAction = z.infer<typeof CheckForMergeConflictActionSchema>;
-const CheckForMergeConflictActionSchema = z.object({
+export const CheckForMergeConflictActionSchema = z.object({
   action: z.literal('check-for-merge-conflict'),
   name: z.string().optional(),
   with: z.object({
@@ -59,16 +71,13 @@ const CheckForMergeConflictActionSchema = z.object({
 });
 
 export type MergePullRequestAction = z.infer<typeof MergePullRequestActionSchema>;
-const MergePullRequestActionSchema = z.object({
+export const MergePullRequestActionSchema = z.object({
   action: z.literal('merge-pull-request'),
   name: z.string().optional(),
-  with: z.object({
-    baseRef: z.string(),
-  }),
 });
 
 export type CreatePullRequestAction = z.infer<typeof CreatePullRequestActionSchema>;
-const CreatePullRequestActionSchema = z.object({
+export const CreatePullRequestActionSchema = z.object({
   action: z.literal('create-pull-request'),
   name: z.string().optional(),
   with: z.object({
@@ -79,14 +88,14 @@ const CreatePullRequestActionSchema = z.object({
 });
 
 export type Action = z.infer<typeof ActionSchema>;
-const ActionSchema = z.discriminatedUnion('action', [
+export const ActionSchema = z.discriminatedUnion('action', [
   CheckForMergeConflictActionSchema,
   MergePullRequestActionSchema,
   CreatePullRequestActionSchema,
 ]);
 
 export type Commands = z.infer<typeof CommandsSchema>;
-const CommandsSchema = z.object({
+export const CommandsSchema = z.object({
   trigger: z.string(),
   actions: ActionSchema.array().nonempty(),
 });
@@ -94,5 +103,5 @@ const CommandsSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 export const ConfigSchema = z.object({
   modules: ModulesSchema.optional(),
-  commands: CommandsSchema.optional(),
+  commands: CommandsSchema.array().optional(),
 });

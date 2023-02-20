@@ -1,4 +1,4 @@
-import { ApprovalLabeller, LabelsToApply, RequiredApprovals } from '../Config/ConfigSchema';
+import { ApprovalLabeller, ApprovalLabellerModule, LabelsToApply, RequiredApprovals } from '../Config/ConfigSchema';
 import {
   EndGroup,
   GetPullRequestResponse,
@@ -12,7 +12,7 @@ import {
 import { LabelState } from '../Core/LabelState';
 
 export async function ProcessApprovalLabeller(
-  config: ApprovalLabeller | undefined,
+  config: ApprovalLabellerModule | undefined,
   pullRequest: GetPullRequestResponse,
   labelState: LabelState
 ) {

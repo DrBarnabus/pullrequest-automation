@@ -1,0 +1,1189 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"check-for-merge-conflict","name":1}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"check-for-merge-conflict","with":{"baseRef":1,"comparisonBaseRef":1}}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "baseRef"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "comparisonBaseRef"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"check-for-merge-conflict","with":null}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "null",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with"
+    ],
+    "message": "Expected object, received null"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"create-pull-request","name":1}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "baseRef"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "headRef"
+    ],
+    "message": "Required"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"create-pull-request","with":{"baseRef":1,"headRef":1,"label":1}}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "baseRef"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "headRef"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with",
+      "label"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"create-pull-request","with":null}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "null",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "with"
+    ],
+    "message": "Expected object, received null"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"invalid"}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      "check-for-merge-conflict",
+      "merge-pull-request",
+      "create-pull-request"
+    ],
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "action"
+    ],
+    "message": "Invalid discriminator value. Expected 'check-for-merge-conflict' | 'merge-pull-request' | 'create-pull-request'"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":[{"action":"merge-pull-request","name":1}]}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "actions",
+      0,
+      "name"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"actions":{}}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":[{"trigger":1}]} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "commands",
+      0,
+      "trigger"
+    ],
+    "message": "Expected string, received number"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"commands":{}} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":"invalid","branchLabeller":"invalid","reviewerExpander":"invalid"}} 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "approvalLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "branchLabeller"
+    ],
+    "message": "Expected object, received string"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander"
+    ],
+    "message": "Expected object, received string"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"enabled":"false"}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"labelsToApply":{"approved":1,"rejected":1,"needsReview":1,"draft":1}}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"labelsToApply":{"approved":null,"rejected":null,"needsReview":null}}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"labelsToApply":null}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"requiredApprovals":"invalid"}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"requiredApprovals":[]}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"requiredApprovals":[{"baseRef":null,"requiredApprovals":0}]}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"requiredApprovals":{}}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"requiredApprovals":0}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"approvalLabeller":{"useLegacyMethod":"false"}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"branchLabeller":{"enabled":"false"}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "branchLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"branchLabeller":{"rules":[]}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "branchLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"branchLabeller":{"rules":[{"baseRef":1,"headRef":1,"labelToApply":2}]}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "branchLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"branchLabeller":{"rules":null}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "branchLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  }
+]"
+`;
+
+exports[`ConfigSchema should correctly flag errors in the configuration {"modules":{"reviewerExpander":{"enabled":"false"}}} 1`] = `
+"[
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "approvalLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_union_discriminator",
+    "options": [
+      false,
+      true
+    ],
+    "path": [
+      "modules",
+      "branchLabeller",
+      "enabled"
+    ],
+    "message": "Invalid discriminator value. Expected false | true"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "boolean",
+    "received": "string",
+    "path": [
+      "modules",
+      "reviewerExpander",
+      "enabled"
+    ],
+    "message": "Expected boolean, received string"
+  }
+]"
+`;

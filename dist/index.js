@@ -7,45 +7,55 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ConfigSchema = void 0;
+exports.ConfigSchema = exports.CommandsSchema = exports.ActionSchema = exports.CreatePullRequestActionSchema = exports.MergePullRequestActionSchema = exports.CheckForMergeConflictActionSchema = exports.ModulesSchema = exports.ReviewerExpanderSchema = exports.BranchLabellerSchema = exports.ApprovalLabellerModuleSchema = exports.LabelsToApplySchema = exports.RequiredApprovalsSchema = void 0;
 const zod_1 = __nccwpck_require__(3301);
-const RequiredApprovalsSchema = zod_1.z.union([
-    zod_1.z.number(),
-    zod_1.z.string(),
-    zod_1.z.object({ baseRef: zod_1.z.string(), requiredApprovals: zod_1.z.number() }).array(),
+exports.RequiredApprovalsSchema = zod_1.z.union([
+    zod_1.z.number().gte(1),
+    zod_1.z.literal('smart'),
+    zod_1.z
+        .object({ baseRef: zod_1.z.string(), requiredApprovals: zod_1.z.number().gte(1) })
+        .array()
+        .nonempty(),
 ]);
-const LabelsToApplySchema = zod_1.z.object({
+exports.LabelsToApplySchema = zod_1.z.object({
     approved: zod_1.z.string(),
     rejected: zod_1.z.string(),
     needsReview: zod_1.z.string(),
     draft: zod_1.z.string().optional(),
 });
 const ApprovalLabellerSchema = zod_1.z.object({
-    enabled: zod_1.z.boolean(),
-    requiredApprovals: RequiredApprovalsSchema,
+    enabled: zod_1.z.literal(true),
+    requiredApprovals: exports.RequiredApprovalsSchema,
     useLegacyMethod: zod_1.z.boolean().optional(),
-    labelsToApply: LabelsToApplySchema,
+    labelsToApply: exports.LabelsToApplySchema,
 });
-const BranchLabellerSchema = zod_1.z.object({
+exports.ApprovalLabellerModuleSchema = zod_1.z.discriminatedUnion('enabled', [
+    zod_1.z.object({ enabled: zod_1.z.literal(false) }),
+    ApprovalLabellerSchema,
+]);
+exports.BranchLabellerSchema = zod_1.z.discriminatedUnion('enabled', [
+    zod_1.z.object({ enabled: zod_1.z.literal(false) }),
+    zod_1.z.object({
+        enabled: zod_1.z.literal(true),
+        rules: zod_1.z
+            .object({
+            baseRef: zod_1.z.string(),
+            headRef: zod_1.z.string().optional(),
+            labelToApply: zod_1.z.string(),
+        })
+            .array()
+            .nonempty(),
+    }),
+]);
+exports.ReviewerExpanderSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
-    rules: zod_1.z
-        .object({
-        baseRef: zod_1.z.string(),
-        headRef: zod_1.z.string().optional(),
-        labelToApply: zod_1.z.string(),
-    })
-        .array()
-        .nonempty(),
 });
-const ReviewerExpanderSchema = zod_1.z.object({
-    enabled: zod_1.z.boolean(),
+exports.ModulesSchema = zod_1.z.object({
+    approvalLabeller: exports.ApprovalLabellerModuleSchema.optional(),
+    branchLabeller: exports.BranchLabellerSchema.optional(),
+    reviewerExpander: exports.ReviewerExpanderSchema.optional(),
 });
-const ModulesSchema = zod_1.z.object({
-    approvalLabeller: ApprovalLabellerSchema.optional(),
-    branchLabeller: BranchLabellerSchema.optional(),
-    reviewerExpander: ReviewerExpanderSchema.optional(),
-});
-const CheckForMergeConflictActionSchema = zod_1.z.object({
+exports.CheckForMergeConflictActionSchema = zod_1.z.object({
     action: zod_1.z.literal('check-for-merge-conflict'),
     name: zod_1.z.string().optional(),
     with: zod_1.z.object({
@@ -53,14 +63,11 @@ const CheckForMergeConflictActionSchema = zod_1.z.object({
         comparisonBaseRef: zod_1.z.string(),
     }),
 });
-const MergePullRequestActionSchema = zod_1.z.object({
+exports.MergePullRequestActionSchema = zod_1.z.object({
     action: zod_1.z.literal('merge-pull-request'),
     name: zod_1.z.string().optional(),
-    with: zod_1.z.object({
-        baseRef: zod_1.z.string(),
-    }),
 });
-const CreatePullRequestActionSchema = zod_1.z.object({
+exports.CreatePullRequestActionSchema = zod_1.z.object({
     action: zod_1.z.literal('create-pull-request'),
     name: zod_1.z.string().optional(),
     with: zod_1.z.object({
@@ -69,18 +76,18 @@ const CreatePullRequestActionSchema = zod_1.z.object({
         label: zod_1.z.string().optional(),
     }),
 });
-const ActionSchema = zod_1.z.discriminatedUnion('action', [
-    CheckForMergeConflictActionSchema,
-    MergePullRequestActionSchema,
-    CreatePullRequestActionSchema,
+exports.ActionSchema = zod_1.z.discriminatedUnion('action', [
+    exports.CheckForMergeConflictActionSchema,
+    exports.MergePullRequestActionSchema,
+    exports.CreatePullRequestActionSchema,
 ]);
-const CommandsSchema = zod_1.z.object({
+exports.CommandsSchema = zod_1.z.object({
     trigger: zod_1.z.string(),
-    actions: ActionSchema.array().nonempty(),
+    actions: exports.ActionSchema.array().nonempty(),
 });
 exports.ConfigSchema = zod_1.z.object({
-    modules: ModulesSchema.optional(),
-    commands: CommandsSchema.optional(),
+    modules: exports.ModulesSchema.optional(),
+    commands: exports.CommandsSchema.array().optional(),
 });
 
 
@@ -92,7 +99,7 @@ exports.ConfigSchema = zod_1.z.object({
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LoadConfig = void 0;
+exports.ParseAndValidateConfig = exports.LoadConfig = void 0;
 const yaml_1 = __nccwpck_require__(4083);
 const Core_1 = __nccwpck_require__(5782);
 const ConfigSchema_1 = __nccwpck_require__(8558);
@@ -124,6 +131,7 @@ async function ParseAndValidateConfig(configPath, configFileContents) {
     (0, Core_1.LogInfo)(`Loaded config from ${configPath}\n---\n${(0, yaml_1.stringify)(config, null, 2)}\n---`);
     return await ConfigSchema_1.ConfigSchema.parseAsync(config);
 }
+exports.ParseAndValidateConfig = ParseAndValidateConfig;
 
 
 /***/ }),
@@ -859,6 +867,9 @@ function CheckIfApplies(prBaseRef, prHeadRef, baseRef, headRef) {
 }
 function ValidateAndExtractConfig(config) {
     let isValid = true;
+    if (!config.enabled) {
+        throw new Error('modules.branchLabeller config failed validation');
+    }
     if (!config.rules || config.rules.length == 0) {
         (0, Core_1.LogError)(`Config Validation failed modules.branchLabeller.rules, at least one rule must be supplied`);
         isValid = false;

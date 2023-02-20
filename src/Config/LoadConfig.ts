@@ -27,7 +27,7 @@ export async function LoadConfig(): Promise<Config> {
   }
 }
 
-async function ParseAndValidateConfig(configPath: string, configFileContents: string): Promise<Config> {
+export async function ParseAndValidateConfig(configPath: string, configFileContents: string): Promise<Config> {
   const config = parseYaml(configFileContents) as unknown;
   LogInfo(`Loaded config from ${configPath}\n---\n${stringifyYaml(config, null, 2)}\n---`);
 
