@@ -3,10 +3,11 @@ import { WebhookPayload } from '@actions/github/lib/interfaces';
 import { ProcessApprovalLabeller } from './Modules/ApprovalLabeller';
 import { ProcessBranchLabeller } from './Modules/BranchLabeller';
 import { LoadConfig } from './Config/LoadConfig';
-import { GitHubClient, LogDebug, LogInfo, SetFailed } from './Core';
+import { EndGroup, GitHubClient, LogDebug, LogInfo, SetFailed, StartGroup } from './Core';
 import { LabelState } from './Core/LabelState';
 import { ProcessReviewerExpander } from './Modules/ReviewerExpander';
-import { Modules } from './Config/ConfigSchema';
+import { Command, Modules } from './Config/ConfigSchema';
+import { ProcessCommand } from './ProcessCommand';
 
 async function main() {
   try {
@@ -20,13 +21,19 @@ async function main() {
     if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
       if (!config?.modules) {
         throw new Error(
-          `Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`
+          `Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.`
         );
       }
 
       await ProcessModules(config.modules, context.payload);
     } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request != null) {
-      throw new Error('Commands are temporarily unavailable in vNext, they are being re-implemented');
+      if (!config.commands || config.commands.length === 0) {
+        throw new Error(
+          `No commands configured, at least one command must be configured when handling pull_request_target and pull_request_review events.`
+        );
+      }
+
+      await ProcessCommands(config.commands, context.payload);
     } else {
       throw new Error('Unable to determine correct action based on triggering event');
     }
@@ -35,7 +42,7 @@ async function main() {
   }
 }
 
-async function ProcessModules(config: Modules, payload: WebhookPayload) {
+async function ProcessModules(modules: Modules, payload: WebhookPayload) {
   const pullRequestNumber = payload.pull_request?.number;
   if (!pullRequestNumber) {
     throw new Error('Unable to determine pull request number from context');
@@ -47,13 +54,51 @@ async function ProcessModules(config: Modules, payload: WebhookPayload) {
   const existingLabels = await GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
   const labelState = new LabelState(existingLabels.map((l) => l.name));
 
-  await ProcessApprovalLabeller(config.approvalLabeller, pullRequest, labelState);
-  await ProcessBranchLabeller(config.branchLabeller, pullRequest, labelState);
-  await ProcessReviewerExpander(config.reviewerExpander, pullRequest);
+  await ProcessApprovalLabeller(modules.approvalLabeller, pullRequest, labelState);
+  await ProcessBranchLabeller(modules.branchLabeller, pullRequest, labelState);
+  await ProcessReviewerExpander(modules.reviewerExpander, pullRequest);
 
   await labelState.Apply(pullRequestNumber);
 
   LogInfo('Finished processing');
+}
+
+async function ProcessCommands(commands: Command[], payload: WebhookPayload) {
+  StartGroup('Commands');
+  try {
+    if (!payload.comment) {
+      throw new Error(`Unable to extract comment from context payload`);
+    }
+
+    if (!payload.issue?.pull_request) {
+      throw new Error(`Unable to extract issue.pull_request from context payload`);
+    }
+
+    const comment = payload.comment;
+
+    LogInfo(`Processing comment ${comment.html_url}`);
+    LogInfo(`Comment body:\n${comment.body}`);
+
+    const pullRequestNumber = payload.issue?.number;
+    if (!pullRequestNumber) {
+      throw new Error('Unable to determine pull request number from context');
+    }
+
+    const pullRequest = await GitHubClient.get().GetPullRequest(pullRequestNumber);
+    LogInfo(`Processing comment on pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+
+    LogDebug(`There are ${commands.length} commands to process`);
+    for (const command of commands) {
+      const handled = await ProcessCommand(command, pullRequest, comment);
+      if (handled) {
+        return;
+      }
+    }
+
+    LogInfo(`Finished Processing`);
+  } finally {
+    EndGroup();
+  }
 }
 
 main();

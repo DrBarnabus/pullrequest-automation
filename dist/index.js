@@ -7,7 +7,7 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ConfigSchema = exports.CommandsSchema = exports.ActionSchema = exports.CreatePullRequestActionSchema = exports.MergePullRequestActionSchema = exports.CheckForMergeConflictActionSchema = exports.ModulesSchema = exports.ReviewerExpanderSchema = exports.BranchLabellerSchema = exports.ApprovalLabellerModuleSchema = exports.LabelsToApplySchema = exports.RequiredApprovalsSchema = void 0;
+exports.ConfigSchema = exports.CommandSchema = exports.ActionSchema = exports.CreatePullRequestActionSchema = exports.MergePullRequestActionSchema = exports.CheckForMergeConflictActionSchema = exports.ModulesSchema = exports.ReviewerExpanderSchema = exports.BranchLabellerSchema = exports.ApprovalLabellerModuleSchema = exports.LabelsToApplySchema = exports.RequiredApprovalsSchema = void 0;
 const zod_1 = __nccwpck_require__(3301);
 exports.RequiredApprovalsSchema = zod_1.z.union([
     zod_1.z.number().gte(1),
@@ -81,13 +81,13 @@ exports.ActionSchema = zod_1.z.discriminatedUnion('action', [
     exports.MergePullRequestActionSchema,
     exports.CreatePullRequestActionSchema,
 ]);
-exports.CommandsSchema = zod_1.z.object({
+exports.CommandSchema = zod_1.z.object({
     trigger: zod_1.z.string(),
     actions: exports.ActionSchema.array().nonempty(),
 });
 exports.ConfigSchema = zod_1.z.object({
     modules: exports.ModulesSchema.optional(),
-    commands: exports.CommandsSchema.array().optional(),
+    commands: exports.CommandSchema.array().optional(),
 });
 
 
@@ -946,6 +946,44 @@ async function ProcessReviewerExpander(config, pullRequest) {
     }
 }
 exports.ProcessReviewerExpander = ProcessReviewerExpander;
+
+
+/***/ }),
+
+/***/ 7232:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProcessCommand = void 0;
+const Core_1 = __nccwpck_require__(5782);
+async function ProcessCommand(command, pullRequest, comment) {
+    if (!CheckIfTriggered(comment.body, command.trigger)) {
+        return false;
+    }
+    (0, Core_1.LogDebug)(`There are ${command.actions.length} actions to process for this command`);
+    for (const action of command.actions) {
+        switch (action.action) {
+            case 'check-for-merge-conflict':
+                break;
+            case 'merge-pull-request':
+                break;
+            case 'create-pull-request':
+                break;
+            default:
+                throw new Error(`Unrecognized command action of ${action.action} unable to proceed`);
+        }
+    }
+    (0, Core_1.LogDebug)(`Command with trigger ${command.trigger} has been handled successfully`);
+    return true;
+}
+exports.ProcessCommand = ProcessCommand;
+function CheckIfTriggered(commentBody, trigger) {
+    const isTriggered = commentBody.toLowerCase().includes(trigger.toLowerCase());
+    (0, Core_1.LogInfo)(`Command with trigger '${trigger}' ${isTriggered ? 'has triggered' : 'has not been triggered'}`);
+    return isTriggered;
+}
 
 
 /***/ }),
@@ -47724,6 +47762,7 @@ const LoadConfig_1 = __nccwpck_require__(8795);
 const Core_1 = __nccwpck_require__(5782);
 const LabelState_1 = __nccwpck_require__(6207);
 const ReviewerExpander_1 = __nccwpck_require__(6932);
+const ProcessCommand_1 = __nccwpck_require__(7232);
 async function main() {
     var _a;
     try {
@@ -47734,12 +47773,15 @@ async function main() {
         (0, Core_1.LogDebug)(`Event Payload: ${JSON.stringify(github_1.context.payload, null, 2)}`);
         if (eventName === 'pull_request_target' || eventName === 'pull_request_review') {
             if (!(config === null || config === void 0 ? void 0 : config.modules)) {
-                throw new Error(`Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.\nSee: https://github.com/DrBarnabus/pullrequest-automation/blob/main/v3-CHANGES.md`);
+                throw new Error(`Config Validation failed modules, must be supplied when handling pull_request_target and pull_request_review events.`);
             }
             await ProcessModules(config.modules, github_1.context.payload);
         }
         else if (eventName === 'issue_comment' && ((_a = github_1.context.payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request) != null) {
-            throw new Error('Commands are temporarily unavailable in vNext, they are being re-implemented');
+            if (!config.commands || config.commands.length === 0) {
+                throw new Error(`No commands configured, at least one command must be configured when handling pull_request_target and pull_request_review events.`);
+            }
+            await ProcessCommands(config.commands, github_1.context.payload);
         }
         else {
             throw new Error('Unable to determine correct action based on triggering event');
@@ -47749,7 +47791,7 @@ async function main() {
         (0, Core_1.SetFailed)(error.message);
     }
 }
-async function ProcessModules(config, payload) {
+async function ProcessModules(modules, payload) {
     var _a;
     const pullRequestNumber = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
     if (!pullRequestNumber) {
@@ -47759,11 +47801,43 @@ async function ProcessModules(config, payload) {
     (0, Core_1.LogInfo)(`Processing pull request #${pullRequestNumber} - '${pullRequest.title}'`);
     const existingLabels = await Core_1.GitHubClient.get().ListLabelsOnIssue(pullRequestNumber);
     const labelState = new LabelState_1.LabelState(existingLabels.map((l) => l.name));
-    await (0, ApprovalLabeller_1.ProcessApprovalLabeller)(config.approvalLabeller, pullRequest, labelState);
-    await (0, BranchLabeller_1.ProcessBranchLabeller)(config.branchLabeller, pullRequest, labelState);
-    await (0, ReviewerExpander_1.ProcessReviewerExpander)(config.reviewerExpander, pullRequest);
+    await (0, ApprovalLabeller_1.ProcessApprovalLabeller)(modules.approvalLabeller, pullRequest, labelState);
+    await (0, BranchLabeller_1.ProcessBranchLabeller)(modules.branchLabeller, pullRequest, labelState);
+    await (0, ReviewerExpander_1.ProcessReviewerExpander)(modules.reviewerExpander, pullRequest);
     await labelState.Apply(pullRequestNumber);
     (0, Core_1.LogInfo)('Finished processing');
+}
+async function ProcessCommands(commands, payload) {
+    var _a, _b;
+    (0, Core_1.StartGroup)('Commands');
+    try {
+        if (!payload.comment) {
+            throw new Error(`Unable to extract comment from context payload`);
+        }
+        if (!((_a = payload.issue) === null || _a === void 0 ? void 0 : _a.pull_request)) {
+            throw new Error(`Unable to extract issue.pull_request from context payload`);
+        }
+        const comment = payload.comment;
+        (0, Core_1.LogInfo)(`Processing comment ${comment.html_url}`);
+        (0, Core_1.LogInfo)(`Comment body:\n${comment.body}`);
+        const pullRequestNumber = (_b = payload.issue) === null || _b === void 0 ? void 0 : _b.number;
+        if (!pullRequestNumber) {
+            throw new Error('Unable to determine pull request number from context');
+        }
+        const pullRequest = await Core_1.GitHubClient.get().GetPullRequest(pullRequestNumber);
+        (0, Core_1.LogInfo)(`Processing comment on pull request #${pullRequestNumber} - '${pullRequest.title}'`);
+        (0, Core_1.LogDebug)(`There are ${commands.length} commands to process`);
+        for (const command of commands) {
+            const handled = await (0, ProcessCommand_1.ProcessCommand)(command, pullRequest, comment);
+            if (handled) {
+                return;
+            }
+        }
+        (0, Core_1.LogInfo)(`Finished Processing`);
+    }
+    finally {
+        (0, Core_1.EndGroup)();
+    }
 }
 main();
 

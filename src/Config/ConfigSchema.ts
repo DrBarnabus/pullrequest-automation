@@ -94,8 +94,8 @@ export const ActionSchema = z.discriminatedUnion('action', [
   CreatePullRequestActionSchema,
 ]);
 
-export type Commands = z.infer<typeof CommandsSchema>;
-export const CommandsSchema = z.object({
+export type Command = z.infer<typeof CommandSchema>;
+export const CommandSchema = z.object({
   trigger: z.string(),
   actions: ActionSchema.array().nonempty(),
 });
@@ -103,5 +103,5 @@ export const CommandsSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 export const ConfigSchema = z.object({
   modules: ModulesSchema.optional(),
-  commands: CommandsSchema.array().optional(),
+  commands: CommandSchema.array().optional(),
 });
